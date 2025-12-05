@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reorderables/reorderables.dart';
 import '../models/panel_widget_config.dart';
 import '../providers/mqtt_providers.dart';
 import '../providers/storage_providers.dart';
@@ -119,15 +120,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             )
-          : ReorderableGridView(
-              padding: const EdgeInsets.all(16),
-              crossAxisCount: 2,
-              childAspectRatio: 1,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              children: dashboard.widgets.map((config) => _buildWidget(config)).toList(),
-              onReorder: (oldIndex, newIndex) => _reorderWidget(oldIndex, newIndex),
-            ),
+          : _isEditMode
+              ? Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ReorderableWrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: dashboard.widgets.map((config) => SizedBox(
+                      key: ValueKey(config.id),
+                      width: (MediaQuery.of(context).size.width - 48) / 2, // 2 columns with padding
+                      child: _buildWidget(config),
+                    )).toList(),
+                    onReorder: (oldIndex, newIndex) => _reorderWidget(oldIndex, newIndex),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: dashboard.widgets.length,
+                  itemBuilder: (context, index) => _buildWidget(dashboard.widgets[index]),
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addWidget,
         child: const Icon(Icons.add),
@@ -246,42 +263,5 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final updated = dashboard.copyWith(widgets: widgets);
     ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
-  }
-}
-
-// Helper widget untuk GridView yang bisa drag & drop
-class ReorderableGridView extends StatelessWidget {
-  final int crossAxisCount;
-  final double childAspectRatio;
-  final double crossAxisSpacing;
-  final double mainAxisSpacing;
-  final EdgeInsetsGeometry padding;
-  final List<Widget> children;
-  final Function(int, int) onReorder;
-
-  const ReorderableGridView({
-    super.key,
-    required this.crossAxisCount,
-    required this.childAspectRatio,
-    required this.crossAxisSpacing,
-    required this.mainAxisSpacing,
-    required this.padding,
-    required this.children,
-    required this.onReorder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: padding,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: childAspectRatio,
-        crossAxisSpacing: crossAxisSpacing,
-        mainAxisSpacing: mainAxisSpacing,
-      ),
-      itemCount: children.length,
-      itemBuilder: (context, index) => children[index],
-    );
   }
 }
