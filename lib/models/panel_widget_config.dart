@@ -6,73 +6,33 @@ part 'panel_widget_config.g.dart';
 
 @HiveType(typeId: 2)
 enum WidgetType {
-  @HiveField(0)
-  toggle,
-  @HiveField(1)
-  button,
-  @HiveField(2)
-  gauge,
-  @HiveField(3)
-  lineChart,
-  @HiveField(4)
-  text,
+  @HiveField(0) toggle,
+  @HiveField(1) button,
+  @HiveField(2) gauge,
+  @HiveField(3) lineChart,
+  @HiveField(4) text,
 }
 
 @HiveType(typeId: 3)
 class PanelWidgetConfig extends HiveObject {
-  @HiveField(0)
-  final String id;
-
-  @HiveField(1)
-  String title;
-
-  @HiveField(2)
-  WidgetType type;
-
-  @HiveField(3)
-  String? subscribeTopic;
-
-  @HiveField(4)
-  String? publishTopic;
-
-  @HiveField(5)
-  String? onPayload;
-
-  @HiveField(6)
-  String? offPayload;
-
-  @HiveField(7)
-  int qos;
-
-  @HiveField(8)
-  double x;
-
-  @HiveField(9)
-  double y;
-
-  @HiveField(10)
-  double width;
-
-  @HiveField(11)
-  double height;
-
-  @HiveField(12)
-  int? colorValue;
-
-  @HiveField(13)
-  int? iconCodePoint;
-
-  @HiveField(14)
-  double? minValue;
-
-  @HiveField(15)
-  double? maxValue;
-
-  @HiveField(16)
-  String? unit;
-
-  @HiveField(17)
-  int? maxDataPoints;
+  @HiveField(0) final String id;
+  @HiveField(1) String title;
+  @HiveField(2) WidgetType type;
+  @HiveField(3) String? subscribeTopic;
+  @HiveField(4) String? publishTopic;
+  @HiveField(5) String? onPayload;
+  @HiveField(6) String? offPayload;
+  @HiveField(7) int qos;
+  @HiveField(8) double x;
+  @HiveField(9) double y;
+  @HiveField(10) double width;
+  @HiveField(11) double height;
+  @HiveField(12) int? colorValue;
+  @HiveField(13) int? iconCodePoint;
+  @HiveField(14) double? minValue;
+  @HiveField(15) double? maxValue;
+  @HiveField(16) String? unit;
+  @HiveField(17) int? maxDataPoints;
 
   PanelWidgetConfig({
     String? id,
@@ -99,11 +59,7 @@ class PanelWidgetConfig extends HiveObject {
 
   IconData? get icon {
     if (iconCodePoint == null) return null;
-    return IconData(
-      iconCodePoint!,
-      fontFamily: 'MaterialIcons',
-      matchTextDirection: false,
-    );
+    return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
   }
 
   PanelWidgetConfig copyWith({

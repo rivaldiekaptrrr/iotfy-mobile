@@ -4,11 +4,9 @@ import '../models/broker_config.dart';
 import '../models/dashboard_config.dart';
 import '../models/panel_widget_config.dart';
 
-// Broker Configs Provider
+// Broker Configs
 class BrokerConfigsNotifier extends StateNotifier<List<BrokerConfig>> {
-  BrokerConfigsNotifier() : super([]) {
-    _loadBrokers();
-  }
+  BrokerConfigsNotifier() : super([]) { _loadBrokers(); }
 
   Box<BrokerConfig>? _box;
 
@@ -24,10 +22,7 @@ class BrokerConfigsNotifier extends StateNotifier<List<BrokerConfig>> {
 
   Future<void> updateBroker(BrokerConfig broker) async {
     await _box?.put(broker.id, broker);
-    state = [
-      for (final b in state)
-        if (b.id == broker.id) broker else b,
-    ];
+    state = state.map((b) => b.id == broker.id ? broker : b).toList();
   }
 
   Future<void> deleteBroker(String id) async {
@@ -35,24 +30,14 @@ class BrokerConfigsNotifier extends StateNotifier<List<BrokerConfig>> {
     state = state.where((b) => b.id != id).toList();
   }
 
-  BrokerConfig? getBroker(String id) {
-    try {
-      return state.firstWhere((b) => b.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
+  BrokerConfig? getBroker(String id) => state.cast<BrokerConfig?>().firstWhere((b) => b!.id == id, orElse: () => null);
 }
 
-final brokerConfigsProvider = StateNotifierProvider<BrokerConfigsNotifier, List<BrokerConfig>>((ref) {
-  return BrokerConfigsNotifier();
-});
+final brokerConfigsProvider = StateNotifierProvider<BrokerConfigsNotifier, List<BrokerConfig>>((ref) => BrokerConfigsNotifier());
 
-// Dashboard Configs Provider
+// Dashboard Configs
 class DashboardConfigsNotifier extends StateNotifier<List<DashboardConfig>> {
-  DashboardConfigsNotifier() : super([]) {
-    _loadDashboards();
-  }
+  DashboardConfigsNotifier() : super([]) { _loadDashboards(); }
 
   Box<DashboardConfig>? _box;
 
@@ -68,10 +53,7 @@ class DashboardConfigsNotifier extends StateNotifier<List<DashboardConfig>> {
 
   Future<void> updateDashboard(DashboardConfig dashboard) async {
     await _box?.put(dashboard.id, dashboard);
-    state = [
-      for (final d in state)
-        if (d.id == dashboard.id) dashboard else d,
-    ];
+    state = state.map((d) => d.id == dashboard.id ? dashboard : d).toList();
   }
 
   Future<void> deleteDashboard(String id) async {
@@ -79,26 +61,18 @@ class DashboardConfigsNotifier extends StateNotifier<List<DashboardConfig>> {
     state = state.where((d) => d.id != id).toList();
   }
 
-  DashboardConfig? getDashboard(String id) {
-    try {
-      return state.firstWhere((d) => d.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
+  DashboardConfig? getDashboard(String id) =>
+      state.cast<DashboardConfig?>().firstWhere((d) => d!.id == id, orElse: () => null);
 }
 
-final dashboardConfigsProvider = StateNotifierProvider<DashboardConfigsNotifier, List<DashboardConfig>>((ref) {
-  return DashboardConfigsNotifier();
-});
+final dashboardConfigsProvider = StateNotifierProvider<DashboardConfigsNotifier, List<DashboardConfig>>((ref) => DashboardConfigsNotifier());
 
-// Current Dashboard Provider
 final currentDashboardIdProvider = StateProvider<String?>((ref) => null);
 
 final currentDashboardProvider = Provider<DashboardConfig?>((ref) {
-  final dashboardId = ref.watch(currentDashboardIdProvider);
-  if (dashboardId == null) return null;
-  
-  final notifier = ref.watch(dashboardConfigsProvider.notifier);
-  return notifier.getDashboard(dashboardId);
+  final id = ref.watch(currentDashboardIdProvider);
+  final dashboards = ref.watch(dashboardConfigsProvider);
+  if (id == null) return null;
+  final found = dashboards.where((d) => d.id == id);
+  return found.isNotEmpty ? found.first : null;
 });

@@ -34,12 +34,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BrokerListScreen()),
-                );
-              },
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BrokerListScreen()),
+              ),
             ),
           ],
         ),
@@ -55,12 +53,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BrokerListScreen()),
-                  );
-                },
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BrokerListScreen()),
+                ),
                 icon: const Icon(Icons.add),
                 label: const Text('Create Dashboard'),
               ),
@@ -74,7 +70,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: AppBar(
         title: Text(dashboard.name),
         actions: [
-          // Connection status indicator
+          // Connection status
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Center(
@@ -99,20 +95,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           IconButton(
             icon: Icon(_isEditMode ? Icons.done : Icons.edit),
-            onPressed: () {
-              setState(() {
-                _isEditMode = !_isEditMode;
-              });
-            },
+            onPressed: () => setState(() => _isEditMode = !_isEditMode),
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const BrokerListScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BrokerListScreen()),
+            ),
           ),
         ],
       ),
@@ -123,31 +113,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 children: [
                   const Icon(Icons.widgets_outlined, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  const Text(
-                    'No widgets yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
+                  const Text('No widgets yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Tap + to add your first widget',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
+                  const Text('Tap + to add your first widget', style: TextStyle(fontSize: 14, color: Colors.grey)),
                 ],
               ),
             )
-          : GridView.builder(
+          : ReorderableGridView(
               padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: dashboard.widgets.length,
-              itemBuilder: (context, index) {
-                final widget = dashboard.widgets[index];
-                return _buildWidget(widget);
-              },
+              crossAxisCount: 2,
+              childAspectRatio: 1,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              children: dashboard.widgets.map((config) => _buildWidget(config)).toList(),
+              onReorder: (oldIndex, newIndex) => _reorderWidget(oldIndex, newIndex),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addWidget,
@@ -157,38 +136,152 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildWidget(PanelWidgetConfig config) {
+    Widget panel;
     switch (config.type) {
       case WidgetType.toggle:
-        return TogglePanel(config: config);
+        panel = TogglePanel(config: config);
+        break;
       case WidgetType.button:
-        return ButtonPanel(config: config);
+        panel = ButtonPanel(config: config);
+        break;
       case WidgetType.gauge:
-        return GaugePanel(config: config);
+        panel = GaugePanel(config: config);
+        break;
       case WidgetType.lineChart:
-        return LineChartPanel(config: config);
+        panel = LineChartPanel(config: config);
+        break;
       case WidgetType.text:
-        return Card(
-          child: Center(
-            child: Text(config.title),
-          ),
-        );
+        panel = Card(child: Center(child: Text(config.title)));
+        break;
     }
+
+    // Wrap dengan Stack agar bisa menampilkan tombol edit/delete saat edit mode
+    return Stack(
+      key: ValueKey(config.id),
+      children: [
+        panel,
+        if (_isEditMode)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tombol Edit
+                GestureDetector(
+                  onTap: () => _editWidget(config),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ]),
+                    child: const Icon(Icons.edit, size: 20, color: Colors.blue),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Tombol Delete
+                GestureDetector(
+                  onTap: () => _deleteWidget(config.id),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ]),
+                    child: const Icon(Icons.close, size: 20, color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _addWidget() async {
     final config = await showDialog<PanelWidgetConfig>(
       context: context,
-      builder: (context) => const WidgetConfigDialog(),
+      builder: (_) => const WidgetConfigDialog(),
     );
-
     if (config != null) {
       final dashboard = ref.read(currentDashboardProvider);
       if (dashboard != null) {
-        final updatedDashboard = dashboard.copyWith(
-          widgets: [...dashboard.widgets, config],
-        );
-        ref.read(dashboardConfigsProvider.notifier).updateDashboard(updatedDashboard);
+        final updated = dashboard.copyWith(widgets: [...dashboard.widgets, config]);
+        ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
       }
     }
+  }
+
+  void _editWidget(PanelWidgetConfig oldConfig) async {
+    final editedConfig = await showDialog<PanelWidgetConfig>(
+      context: context,
+      builder: (_) => WidgetConfigDialog(initialConfig: oldConfig),
+    );
+    if (editedConfig != null) {
+      final dashboard = ref.read(currentDashboardProvider);
+      if (dashboard != null) {
+        final newWidgets = dashboard.widgets.map((w) => w.id == oldConfig.id ? editedConfig : w).toList();
+        final updated = dashboard.copyWith(widgets: newWidgets);
+        ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
+      }
+    }
+  }
+
+  void _deleteWidget(String id) {
+    final dashboard = ref.read(currentDashboardProvider);
+    if (dashboard != null) {
+      final newWidgets = dashboard.widgets.where((w) => w.id != id).toList();
+      final updated = dashboard.copyWith(widgets: newWidgets);
+      ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
+    }
+  }
+
+  void _reorderWidget(int oldIndex, int newIndex) {
+    final dashboard = ref.read(currentDashboardProvider);
+    if (dashboard == null) return;
+
+    final List<PanelWidgetConfig> widgets = List.from(dashboard.widgets);
+    final moved = widgets.removeAt(oldIndex);
+    if (newIndex > oldIndex) newIndex--;
+    widgets.insert(newIndex, moved);
+
+    final updated = dashboard.copyWith(widgets: widgets);
+    ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
+  }
+}
+
+// Helper widget untuk GridView yang bisa drag & drop
+class ReorderableGridView extends StatelessWidget {
+  final int crossAxisCount;
+  final double childAspectRatio;
+  final double crossAxisSpacing;
+  final double mainAxisSpacing;
+  final EdgeInsetsGeometry padding;
+  final List<Widget> children;
+  final Function(int, int) onReorder;
+
+  const ReorderableGridView({
+    super.key,
+    required this.crossAxisCount,
+    required this.childAspectRatio,
+    required this.crossAxisSpacing,
+    required this.mainAxisSpacing,
+    required this.padding,
+    required this.children,
+    required this.onReorder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: padding,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio,
+        crossAxisSpacing: crossAxisSpacing,
+        mainAxisSpacing: mainAxisSpacing,
+      ),
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
+    );
   }
 }
