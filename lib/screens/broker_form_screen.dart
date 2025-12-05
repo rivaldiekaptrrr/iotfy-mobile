@@ -52,6 +52,14 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.broker == null ? 'Add Broker' : 'Edit Broker'),
+        actions: [
+          if (widget.broker == null)
+            TextButton.icon(
+              onPressed: _showPublicBrokers,
+              icon: const Icon(Icons.cloud),
+              label: const Text('Public Brokers'),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -198,17 +206,127 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
         _isTesting = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? 'Connection successful!' : 'Connection failed: ${service.lastError}'),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ),
-      );
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Connection successful!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Connection Failed'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Error: ${service.lastError}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Troubleshooting Tips:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text('1. Check if the broker address is correct'),
+                  const Text('2. Verify the port number (1883 for non-SSL, 8883 for SSL)'),
+                  const Text('3. Check your internet connection'),
+                  const Text('4. Try a different public broker'),
+                  const Text('5. Disable firewall temporarily to test'),
+                  const Text('6. Some networks block MQTT ports'),
+                  const SizedBox(height: 16),
+                  const Text('Recommended public brokers:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('• broker.hivemq.com:1883'),
+                  const Text('• test.mosquitto.org:1883'),
+                  const Text('• broker.emqx.io:1883'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
 
       if (success) {
         await service.disconnect();
       }
     }
+  }
+
+  void _showPublicBrokers() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Public MQTT Brokers'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              _buildBrokerOption(
+                'Eclipse Mosquitto',
+                'test.mosquitto.org',
+                1883,
+                'Free public broker by Eclipse',
+              ),
+              _buildBrokerOption(
+                'HiveMQ Public',
+                'broker.hivemq.com',
+                1883,
+                'Free public broker by HiveMQ',
+              ),
+              _buildBrokerOption(
+                'EMQX Public',
+                'broker.emqx.io',
+                1883,
+                'Free public broker by EMQX',
+              ),
+              _buildBrokerOption(
+                'Mosquitto SSL',
+                'test.mosquitto.org',
+                8883,
+                'SSL/TLS connection',
+                useSsl: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBrokerOption(String name, String host, int port, String description, {bool useSsl = false}) {
+    return Card(
+      child: ListTile(
+        title: Text(name),
+        subtitle: Text('$host:$port\n$description'),
+        isThreeLine: true,
+        trailing: const Icon(Icons.arrow_forward),
+        onTap: () {
+          setState(() {
+            _nameController.text = name;
+            _hostController.text = host;
+            _portController.text = port.toString();
+            _useSsl = useSsl;
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   void _saveBroker() {

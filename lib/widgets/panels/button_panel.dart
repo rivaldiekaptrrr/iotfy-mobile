@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../providers/mqtt_providers.dart';
 import '../../services/mqtt_service.dart';
+import '../../utils/icon_helper.dart';
 
 class ButtonPanel extends ConsumerWidget {
   final PanelWidgetConfig config;
@@ -23,9 +24,9 @@ class ButtonPanel extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (config.icon != null)
+              if (config.iconCodePoint != null && IconHelper.getIcon(config.iconCodePoint) != null)
                 Icon(
-                  config.icon,
+                  IconHelper.getIcon(config.iconCodePoint)!,
                   size: 48,
                   color: isConnected ? config.color : Colors.grey,
                 ),

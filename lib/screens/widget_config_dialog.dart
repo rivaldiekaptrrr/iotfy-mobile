@@ -24,6 +24,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   WidgetType _selectedType = WidgetType.toggle;
   int _qos = 0;
   Color _selectedColor = Colors.blue;
+  int? _selectedIconCodePoint;
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _selectedType = widget.initialConfig!.type;
       _qos = widget.initialConfig!.qos;
       _selectedColor = widget.initialConfig!.color;
+      _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
     }
   }
 
@@ -254,6 +256,26 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       }),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  if (_selectedType == WidgetType.toggle || _selectedType == WidgetType.button) ...[
+                    const Text('Icon (optional):'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildIconOption(Icons.lightbulb.codePoint, Icons.lightbulb),
+                        _buildIconOption(Icons.power_settings_new.codePoint, Icons.power_settings_new),
+                        _buildIconOption(Icons.toggle_on.codePoint, Icons.toggle_on),
+                        _buildIconOption(Icons.outlet.codePoint, Icons.outlet),
+                        _buildIconOption(Icons.thermostat.codePoint, Icons.thermostat),
+                        _buildIconOption(Icons.water_drop.codePoint, Icons.water_drop),
+                        _buildIconOption(Icons.air.codePoint, Icons.air),
+                        _buildIconOption(Icons.sensors.codePoint, Icons.sensors),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -303,6 +325,33 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     }
   }
 
+  Widget _buildIconOption(int codePoint, IconData iconData) {
+    final isSelected = _selectedIconCodePoint == codePoint;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedIconCodePoint = isSelected ? null : codePoint;
+        });
+      },
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: isSelected ? _selectedColor.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? _selectedColor : Colors.grey.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          iconData,
+          color: isSelected ? _selectedColor : Colors.grey,
+        ),
+      ),
+    );
+  }
+
   void _saveWidget() {
     if (_formKey.currentState!.validate()) {
       final config = PanelWidgetConfig(
@@ -315,6 +364,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         offPayload: _offPayloadController.text,
         qos: _qos,
         colorValue: _selectedColor.value,
+        iconCodePoint: _selectedIconCodePoint,
         minValue: double.tryParse(_minValueController.text) ?? 0,
         maxValue: double.tryParse(_maxValueController.text) ?? 100,
         unit: _unitController.text.isEmpty ? null : _unitController.text,

@@ -97,8 +97,14 @@ class PanelWidgetConfig extends HiveObject {
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
 
-  IconData? get icon =>
-      iconCodePoint != null ? IconData(iconCodePoint!, fontFamily: 'MaterialIcons') : null;
+  IconData? get icon {
+    if (iconCodePoint == null) return null;
+    return IconData(
+      iconCodePoint!,
+      fontFamily: 'MaterialIcons',
+      matchTextDirection: false,
+    );
+  }
 
   PanelWidgetConfig copyWith({
     String? title,

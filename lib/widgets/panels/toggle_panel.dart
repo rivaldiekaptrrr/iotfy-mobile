@@ -4,6 +4,7 @@ import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
 import '../../services/mqtt_service.dart';
+import '../../utils/icon_helper.dart';
 
 class TogglePanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -54,9 +55,9 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (widget.config.icon != null)
+            if (widget.config.iconCodePoint != null && IconHelper.getIcon(widget.config.iconCodePoint) != null)
               Icon(
-                widget.config.icon,
+                IconHelper.getIcon(widget.config.iconCodePoint)!,
                 size: 32,
                 color: widget.config.color,
               ),

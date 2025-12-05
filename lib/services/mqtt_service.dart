@@ -52,22 +52,28 @@ class MqttService {
       final clientId = config.clientId ?? 'flutter_mqtt_${DateTime.now().millisecondsSinceEpoch}';
       _client = MqttServerClient.withPort(config.host, clientId, config.port);
 
+      // Configure client settings
       _client!.logging(on: false);
       _client!.keepAlivePeriod = config.keepAlivePeriod;
+      _client!.connectTimeoutPeriod = 10000; // 10 seconds timeout
       _client!.onDisconnected = _onDisconnected;
       _client!.onConnected = _onConnected;
       _client!.onSubscribed = _onSubscribed;
       _client!.autoReconnect = false;
       _client!.secure = config.useSsl;
+      _client!.setProtocolV311(); // Use MQTT 3.1.1 protocol
 
       if (config.useSsl) {
         _client!.securityContext = SecurityContext.defaultContext;
+        _client!.onBadCertificate = (dynamic certificate) => true; // Accept self-signed certificates
       }
 
+      // Create connection message
       final connMessage = MqttConnectMessage()
           .withClientIdentifier(clientId)
-          .startClean()
-          .withWillQos(MqttQos.atLeastOnce);
+          .startClean() // Clean session
+          .withWillQos(MqttQos.atMostOnce)
+          .keepAliveFor(config.keepAlivePeriod);
 
       if (config.username != null && config.username!.isNotEmpty) {
         connMessage.authenticateAs(config.username!, config.password ?? '');
@@ -75,21 +81,37 @@ class MqttService {
 
       _client!.connectionMessage = connMessage;
 
-      await _client!.connect();
+      // Try to connect
+      try {
+        await _client!.connect();
+      } on Exception catch (e) {
+        _client!.disconnect();
+        final errorMsg = 'Connection failed: ${e.toString()}';
+        _updateStatus(ConnectionStatus.error, errorMsg);
+        if (_autoReconnect) {
+          _scheduleReconnect();
+        }
+        return false;
+      }
 
       if (_client!.connectionStatus!.state == MqttConnectionState.connected) {
         _updateStatus(ConnectionStatus.connected);
         _setupMessageListener();
         return true;
       } else {
-        final errorMsg = 'Connection failed: ${_client!.connectionStatus!.state}';
+        final errorMsg = 'Connection failed: ${_client!.connectionStatus!.returnCode}';
         _updateStatus(ConnectionStatus.error, errorMsg);
+        if (_autoReconnect) {
+          _scheduleReconnect();
+        }
         return false;
       }
     } catch (e) {
       final errorMsg = 'Connection error: $e';
       _updateStatus(ConnectionStatus.error, errorMsg);
-      _scheduleReconnect();
+      if (_autoReconnect) {
+        _scheduleReconnect();
+      }
       return false;
     }
   }
