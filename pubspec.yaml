@@ -1,4 +1,4 @@
-name: valiotdashboard
+name: VALIoT
 description: "IoT MQTT Panel - Dashboard for IoT devices with MQTT connectivity"
 publish_to: 'none'
 
