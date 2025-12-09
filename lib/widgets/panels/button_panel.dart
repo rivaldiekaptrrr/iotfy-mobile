@@ -16,10 +16,12 @@ class ButtonPanel extends ConsumerWidget {
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
+    final scheme = Theme.of(context).colorScheme;
 
-    return Card(
-      elevation: 2,
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
+        borderRadius: BorderRadius.circular(14),
         onTap: () {
           if (!isConnected) {
             _showConnectionWarning(context, lastError);
@@ -36,7 +38,7 @@ class ButtonPanel extends ConsumerWidget {
                 Icon(
                   IconHelper.getIcon(config.iconCodePoint)!,
                   size: 48,
-                  color: isConnected ? config.color : Colors.grey,
+                  color: isConnected ? config.color : scheme.onSurfaceVariant,
                 ),
               const SizedBox(height: 12),
               Text(

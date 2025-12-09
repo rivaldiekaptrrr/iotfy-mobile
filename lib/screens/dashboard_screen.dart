@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderables/reorderables.dart';
 import '../models/panel_widget_config.dart';
+import '../models/dashboard_config.dart';
+import '../models/broker_config.dart';
+import '../models/dashboard_config.dart';
+import '../models/broker_config.dart';
 import '../models/mqtt_log_entry.dart';
 import '../providers/mqtt_providers.dart';
 import '../providers/storage_providers.dart';
@@ -28,6 +32,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final dashboard = ref.watch(currentDashboardProvider);
+    final broker = dashboard != null
+        ? ref.watch(brokerConfigsProvider.notifier).getBroker(dashboard.brokerId)
+        : null;
     final connectionStatus = ref.watch(connectionStatusProvider);
     final status = connectionStatus.value ?? ConnectionStatus.disconnected;
     final isConnected = status == ConnectionStatus.connected;
@@ -165,6 +172,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           : _isEditMode
               ? Column(
                   children: [
+                    _buildHeader(context, dashboard, broker, isConnected, isConnecting, isError, lastError),
                     Container(
                       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       padding: const EdgeInsets.all(12),
@@ -190,7 +198,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                   ],
                 )
-              : _buildReadonlyWrap(context, dashboard.widgets),
+              : Column(
+                  children: [
+                    _buildHeader(context, dashboard, broker, isConnected, isConnecting, isError, lastError),
+                    Expanded(child: _buildReadonlyWrap(context, dashboard.widgets)),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addWidget,
         child: const Icon(Icons.add),
@@ -222,7 +235,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Stack(
       key: ValueKey(config.id),
       children: [
-        panel,
+        _buildPanelShell(config, panel),
         if (_isEditMode)
           Positioned(
             top: 4,
@@ -306,6 +319,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPanelShell(PanelWidgetConfig config, Widget child) {
+    final baseColor = config.color.withOpacity(0.08);
+    final borderColor = config.color.withOpacity(0.16);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            baseColor,
+            baseColor.withOpacity(0.35),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: child,
+      ),
     );
   }
 
@@ -460,6 +497,106 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    DashboardConfig dashboard,
+    BrokerConfig? broker,
+    bool isConnected,
+    bool isConnecting,
+    bool isError,
+    String? lastError,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.memory_outlined, color: scheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dashboard.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    broker != null
+                        ? '${broker.name} • ${broker.host}:${broker.port}'
+                        : 'Broker not set',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                  if (isError && lastError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        lastError,
+                        style: TextStyle(color: scheme.error, fontSize: 12),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Reconnect',
+              icon: Icon(Icons.refresh, color: scheme.primary),
+              onPressed: () async {
+                if (broker != null) {
+                  await ref.read(mqttServiceProvider).connect(broker);
+                }
+              },
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isConnected
+                    ? Colors.green.withOpacity(0.12)
+                    : isConnecting
+                        ? Colors.orange.withOpacity(0.12)
+                        : Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isConnected
+                        ? Icons.check_circle_outline
+                        : isConnecting
+                            ? Icons.wifi_tethering
+                            : Icons.error_outline,
+                    size: 16,
+                    color: isConnected
+                        ? Colors.green
+                        : isConnecting
+                            ? Colors.orange
+                            : Colors.red,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isConnected
+                        ? 'Connected'
+                        : isConnecting
+                            ? 'Connecting'
+                            : 'Disconnected',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

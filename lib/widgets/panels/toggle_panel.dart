@@ -58,9 +58,10 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
+    final scheme = Theme.of(context).colorScheme;
 
     return Card(
-      elevation: 2,
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -92,6 +93,7 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
                   _toggleSwitch(value);
                 },
                 activeColor: widget.config.color,
+                trackOutlineColor: MaterialStatePropertyAll(scheme.outlineVariant),
               ),
             const SizedBox(height: 8),
             if (!isConnected)

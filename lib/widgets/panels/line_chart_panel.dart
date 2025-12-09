@@ -58,6 +58,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
+    final scheme = Theme.of(context).colorScheme;
 
     return Card(
       elevation: 2,
@@ -96,7 +97,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     'Last: ${_lastValue!.toStringAsFixed(2)} @ ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                 ),

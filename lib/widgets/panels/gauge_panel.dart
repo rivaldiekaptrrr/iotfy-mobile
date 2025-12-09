@@ -20,6 +20,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
   String? _error;
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
   DateTime? _lastUpdated;
+  double? _lastValue;
 
   @override
   void initState() {
@@ -56,6 +57,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
+    final scheme = Theme.of(context).colorScheme;
 
     return Card(
       elevation: 2,
@@ -132,8 +134,9 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Updated ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  'Updated ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}'
+                  '${_lastValue != null ? ' • ${_lastValue!.toStringAsFixed(2)}${widget.config.unit ?? ''}' : ''}',
+                  style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
                 ),
               ),
           ],
@@ -152,6 +155,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
         );
         _error = null;
         _lastUpdated = DateTime.now();
+        _lastValue = value;
       });
     } catch (e) {
       setState(() {

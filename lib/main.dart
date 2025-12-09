@@ -37,14 +37,14 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: const Color(0xFF2563EB), // blue-600
           brightness: Brightness.light,
         ),
         useMaterial3: true,
         cardTheme: CardThemeData(
-          elevation: 2,
+          elevation: 1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -52,18 +52,24 @@ class MyApp extends ConsumerWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           filled: true,
+        ),
+        textTheme: const TextTheme(
+          headlineSmall: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+          titleMedium: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          bodyMedium: TextStyle(fontSize: 14),
+          labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: const Color(0xFF60A5FA), // blue-400
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
         cardTheme: CardThemeData(
-          elevation: 2,
+          elevation: 1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -71,6 +77,12 @@ class MyApp extends ConsumerWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           filled: true,
+        ),
+        textTheme: const TextTheme(
+          headlineSmall: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+          titleMedium: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          bodyMedium: TextStyle(fontSize: 14),
+          labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ),
       themeMode: ThemeMode.system,
