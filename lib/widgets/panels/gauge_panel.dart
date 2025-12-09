@@ -19,6 +19,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
   double _currentValue = 0;
   String? _error;
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
+  DateTime? _lastUpdated;
 
   @override
   void initState() {
@@ -127,6 +128,14 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                   textAlign: TextAlign.center,
                 ),
               ),
+            if (_lastUpdated != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Updated ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ),
           ],
         ),
       ),
@@ -142,6 +151,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
           widget.config.maxValue ?? 100,
         );
         _error = null;
+        _lastUpdated = DateTime.now();
       });
     } catch (e) {
       setState(() {

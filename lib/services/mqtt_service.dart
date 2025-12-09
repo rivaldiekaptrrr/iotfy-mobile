@@ -5,6 +5,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import '../models/broker_config.dart';
 import '../models/mqtt_message.dart' as app_mqtt;
+import '../models/mqtt_log_entry.dart';
 
 enum ConnectionStatus {
   disconnected,
@@ -28,9 +29,11 @@ class MqttService {
 
   final _connectionStatusController = StreamController<ConnectionStatus>.broadcast();
   final _messageController = StreamController<app_mqtt.MqttMessageData>.broadcast();
+  final _logController = StreamController<List<MqttLogEntry>>.broadcast();
 
   Stream<ConnectionStatus> get connectionStatus => _connectionStatusController.stream;
   Stream<app_mqtt.MqttMessageData> get messages => _messageController.stream;
+  Stream<List<MqttLogEntry>> get logs => _logController.stream;
 
   ConnectionStatus _status = ConnectionStatus.disconnected;
   ConnectionStatus get status => _status;
@@ -38,11 +41,15 @@ class MqttService {
   bool _autoReconnect = true;
   String? _lastError;
   String? get lastError => _lastError;
+  final List<MqttLogEntry> _logBuffer = [];
+  static const int _maxLogEntries = 100;
 
   void _updateStatus(ConnectionStatus status, [String? error]) {
     _status = status;
     _lastError = error;
     _connectionStatusController.add(status);
+    final level = status == ConnectionStatus.error ? MqttLogLevel.error : MqttLogLevel.info;
+    _addLog('Status: $status${error != null ? ' ($error)' : ''}', level: level);
   }
 
   Future<bool> connect(BrokerConfig config, {bool autoReconnect = true}) async {
@@ -51,6 +58,7 @@ class MqttService {
       _currentConfig = config;
       _reconnectAttempts = 0;
       _updateStatus(ConnectionStatus.connecting);
+      _addLog('Connecting to ${config.host}:${config.port} (ssl=${config.useSsl})');
 
       await disconnect();
 
@@ -93,6 +101,7 @@ class MqttService {
         _client!.disconnect();
         final errorMsg = 'Connection failed: ${e.toString()}';
         _updateStatus(ConnectionStatus.error, errorMsg);
+        _addLog(errorMsg, level: MqttLogLevel.error);
         if (_autoReconnect) {
           _scheduleReconnect();
         }
@@ -103,10 +112,12 @@ class MqttService {
         _updateStatus(ConnectionStatus.connected);
         _reconnectAttempts = 0;
         _setupMessageListener();
+        _addLog('Connected and listening for messages');
         return true;
       } else {
         final errorMsg = 'Connection failed: ${_client!.connectionStatus!.returnCode}';
         _updateStatus(ConnectionStatus.error, errorMsg);
+        _addLog(errorMsg, level: MqttLogLevel.error);
         if (_autoReconnect) {
           _scheduleReconnect();
         }
@@ -115,6 +126,7 @@ class MqttService {
     } catch (e) {
       final errorMsg = 'Connection error: $e';
       _updateStatus(ConnectionStatus.error, errorMsg);
+      _addLog(errorMsg, level: MqttLogLevel.error);
       if (_autoReconnect) {
         _scheduleReconnect();
       }
@@ -132,6 +144,7 @@ class MqttService {
           topic: message.topic,
           payload: payload,
         ));
+        _addLog('Recv ${message.topic}: $payload');
       }
     });
   }
@@ -140,10 +153,12 @@ class MqttService {
     _updateStatus(ConnectionStatus.connected);
     _reconnectAttempts = 0;
     _reconnectTimer?.cancel();
+    _addLog('onConnected callback');
   }
 
   void _onDisconnected() {
     _updateStatus(ConnectionStatus.disconnected);
+    _addLog('Disconnected');
     if (_autoReconnect && _currentConfig != null) {
       _scheduleReconnect();
     }
@@ -160,6 +175,7 @@ class MqttService {
       _baseReconnectDelay.inSeconds * pow(2, _reconnectAttempts).toInt(),
     );
     _reconnectAttempts++;
+    _addLog('Reconnect in ${delaySeconds}s (attempt: $_reconnectAttempts)');
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       if (_currentConfig != null && _autoReconnect) {
         connect(_currentConfig!);
@@ -180,12 +196,14 @@ class MqttService {
   void subscribe(String topic, {int qos = 0}) {
     if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
       _client!.subscribe(topic, MqttQos.values[qos]);
+      _addLog('Subscribed $topic (qos=$qos)');
     }
   }
 
   void unsubscribe(String topic) {
     if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
       _client!.unsubscribe(topic);
+      _addLog('Unsubscribed $topic');
     }
   }
 
@@ -194,6 +212,7 @@ class MqttService {
       final builder = MqttClientPayloadBuilder();
       builder.addString(payload);
       _client!.publishMessage(topic, MqttQos.values[qos], builder.payload!, retain: retain);
+      _addLog('Publish $topic: $payload (qos=$qos, retain=$retain)');
     }
   }
 
@@ -202,5 +221,15 @@ class MqttService {
     disconnect();
     _connectionStatusController.close();
     _messageController.close();
+    _logController.close();
+  }
+
+  void _addLog(String message, {MqttLogLevel level = MqttLogLevel.info}) {
+    if (_logController.isClosed) return;
+    _logBuffer.add(MqttLogEntry(time: DateTime.now(), level: level, message: message));
+    if (_logBuffer.length > _maxLogEntries) {
+      _logBuffer.removeAt(0);
+    }
+    _logController.add(List.unmodifiable(_logBuffer));
   }
 }

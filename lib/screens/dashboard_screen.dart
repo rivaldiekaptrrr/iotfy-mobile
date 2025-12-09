@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderables/reorderables.dart';
 import '../models/panel_widget_config.dart';
+import '../models/mqtt_log_entry.dart';
 import '../providers/mqtt_providers.dart';
 import '../providers/storage_providers.dart';
 import '../services/mqtt_service.dart';
@@ -28,9 +29,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboard = ref.watch(currentDashboardProvider);
     final connectionStatus = ref.watch(connectionStatusProvider);
-    final isConnected = connectionStatus.value == ConnectionStatus.connected;
-    final isConnecting = connectionStatus.value == ConnectionStatus.connecting;
-    final isError = connectionStatus.value == ConnectionStatus.error;
+    final status = connectionStatus.value ?? ConnectionStatus.disconnected;
+    final isConnected = status == ConnectionStatus.connected;
+    final isConnecting = status == ConnectionStatus.connecting;
+    final isError = status == ConnectionStatus.error;
     final lastError = ref.watch(mqttServiceProvider).lastError;
 
     if (dashboard == null) {
@@ -76,58 +78,63 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: AppBar(
         title: Text(dashboard.name),
         actions: [
-          // Connection status
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Center(
-              child: Row(
-                children: [
-                  Tooltip(
-                    message: isConnected
-                        ? 'Connected'
-                        : isConnecting
-                            ? 'Connecting...'
-                            : isError
-                                ? 'Error: ${lastError ?? "Unknown"}'
-                                : 'Disconnected',
-                    child: Row(
-                      children: [
-                        if (isConnecting)
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        else
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isConnected
-                                  ? Colors.green
-                                  : isError
-                                      ? Colors.orange
-                                      : Colors.red,
-                            ),
+              child: Tooltip(
+                message: isConnected
+                    ? 'Connected'
+                    : isConnecting
+                        ? 'Connecting...'
+                        : isError
+                            ? 'Error: ${lastError ?? "Unknown"}'
+                            : 'Disconnected',
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+                  child: Row(
+                    key: ValueKey(status),
+                    children: [
+                      if (isConnecting)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isConnected
+                                ? Colors.green
+                                : isError
+                                    ? Colors.orange
+                                    : Colors.red,
                           ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isConnected
-                              ? 'Connected'
-                              : isConnecting
-                                  ? 'Connecting...'
-                                  : isError
-                                      ? 'Error'
-                                      : 'Disconnected',
-                          style: const TextStyle(fontSize: 12),
                         ),
-                      ],
-                    ),
+                      const SizedBox(width: 8),
+                      Text(
+                        isConnected
+                            ? 'Connected'
+                            : isConnecting
+                                ? 'Connecting...'
+                                : isError
+                                    ? 'Error'
+                                    : 'Disconnected',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
+          ),
+          IconButton(
+            tooltip: 'Logs',
+            icon: const Icon(Icons.article_outlined),
+            onPressed: () => _openLogSheet(context),
           ),
           IconButton(
             icon: Icon(_isEditMode ? Icons.done : Icons.edit),
@@ -162,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -405,5 +412,54 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final updated = dashboard.copyWith(widgets: widgets);
     ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
+  }
+
+  void _openLogSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final logs = ref.watch(mqttLogsProvider);
+              return logs.when(
+                data: (entries) => entries.isEmpty
+                    ? const Center(child: Text('No logs yet'))
+                    : ListView.builder(
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) {
+                          final entry = entries[entries.length - 1 - index];
+                          final color = switch (entry.level) {
+                            MqttLogLevel.info => Colors.grey,
+                            MqttLogLevel.warn => Colors.orange,
+                            MqttLogLevel.error => Colors.red,
+                          };
+                          final timeStr = entry.time.toLocal().toIso8601String().substring(11, 19);
+                          return ListTile(
+                            dense: true,
+                            leading: Icon(
+                              entry.level == MqttLogLevel.error
+                                  ? Icons.error_outline
+                                  : entry.level == MqttLogLevel.warn
+                                      ? Icons.warning_amber_outlined
+                                      : Icons.info_outline,
+                              color: color,
+                            ),
+                            title: Text(entry.message),
+                            subtitle: Text(timeStr),
+                          );
+                        },
+                      ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Center(child: Text('Failed to load logs')),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }

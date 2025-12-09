@@ -20,6 +20,8 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
   String? _error;
   int _xCounter = 0;
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
+  double? _lastValue;
+  DateTime? _lastUpdated;
 
   @override
   void initState() {
@@ -76,18 +78,29 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                 style: const TextStyle(color: Colors.red, fontSize: 12),
                 textAlign: TextAlign.center,
               )
-            else if (!isConnected)
-              Text(
-                isError ? 'MQTT error' : 'Disconnected',
-                style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-            if (isError && lastError != null)
-              Text(
-                lastError,
-                style: const TextStyle(color: Colors.orange, fontSize: 11),
-                textAlign: TextAlign.center,
-              ),
+            else ...[
+              if (!isConnected)
+                Text(
+                  isError ? 'MQTT error' : 'Disconnected',
+                  style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              if (isError && lastError != null)
+                Text(
+                  lastError,
+                  style: const TextStyle(color: Colors.orange, fontSize: 11),
+                  textAlign: TextAlign.center,
+                ),
+              if (_lastValue != null && _lastUpdated != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Last: ${_lastValue!.toStringAsFixed(2)} @ ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
             const SizedBox(height: 8),
             Expanded(
               child: _dataPoints.isEmpty
@@ -168,7 +181,10 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
 
   void _addDataPoint(String payload) {
     try {
-      final value = double.parse(payload);
+      var value = double.parse(payload);
+      if (widget.config.minValue != null && widget.config.maxValue != null) {
+        value = value.clamp(widget.config.minValue!, widget.config.maxValue!);
+      }
       setState(() {
         _dataPoints.add(FlSpot(_xCounter.toDouble(), value));
         _xCounter++;
@@ -179,6 +195,8 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
         }
 
         _error = null;
+        _lastValue = value;
+        _lastUpdated = DateTime.now();
       });
     } catch (e) {
       setState(() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/dashboard_config.dart';
+import '../models/panel_widget_config.dart';
 import '../providers/storage_providers.dart';
 import '../providers/mqtt_providers.dart';
 import 'dashboard_screen.dart';
@@ -20,6 +21,13 @@ class DashboardListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('${broker?.name ?? "Broker"} Dashboards'),
+        actions: [
+          IconButton(
+            tooltip: 'Templates',
+            icon: const Icon(Icons.auto_awesome),
+            onPressed: () => _openTemplates(context, ref),
+          ),
+        ],
       ),
       body: dashboards.isEmpty
           ? Center(
@@ -37,6 +45,12 @@ class DashboardListScreen extends ConsumerWidget {
                     onPressed: () => _createDashboard(context, ref),
                     icon: const Icon(Icons.add),
                     label: const Text('Create Dashboard'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _openTemplates(context, ref),
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Use Template'),
                   ),
                 ],
               ),
@@ -122,6 +136,97 @@ class DashboardListScreen extends ConsumerWidget {
     );
   }
 
+  void _openTemplates(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.thermostat),
+                title: const Text('Environment Monitor'),
+                subtitle: const Text('Gauge + Line chart for temp/humidity'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _createFromTemplate(ref, 'Env Monitor', [
+                    PanelWidgetConfig(
+                      title: 'Temperature',
+                      type: WidgetType.gauge,
+                      subscribeTopic: 'env/temperature',
+                      minValue: 0,
+                      maxValue: 50,
+                      unit: '°C',
+                      colorValue: Colors.orange.value,
+                      width: 1,
+                    ),
+                    PanelWidgetConfig(
+                      title: 'Humidity',
+                      type: WidgetType.lineChart,
+                      subscribeTopic: 'env/humidity',
+                      minValue: 0,
+                      maxValue: 100,
+                      unit: '%',
+                      colorValue: Colors.blue.value,
+                      maxDataPoints: 60,
+                      width: 2,
+                    ),
+                  ]);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.toggle_on),
+                title: const Text('Smart Relay'),
+                subtitle: const Text('Two toggles + status text'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _createFromTemplate(ref, 'Smart Relay', [
+                    PanelWidgetConfig(
+                      title: 'Relay 1',
+                      type: WidgetType.toggle,
+                      subscribeTopic: 'relay/1/state',
+                      publishTopic: 'relay/1/set',
+                      onPayload: 'ON',
+                      offPayload: 'OFF',
+                      colorValue: Colors.green.value,
+                    ),
+                    PanelWidgetConfig(
+                      title: 'Relay 2',
+                      type: WidgetType.toggle,
+                      subscribeTopic: 'relay/2/state',
+                      publishTopic: 'relay/2/set',
+                      onPayload: 'ON',
+                      offPayload: 'OFF',
+                      colorValue: Colors.teal.value,
+                    ),
+                    PanelWidgetConfig(
+                      title: 'Status',
+                      type: WidgetType.text,
+                      subscribeTopic: 'relay/status',
+                      colorValue: Colors.indigo.value,
+                      width: 2,
+                    ),
+                  ]);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _createFromTemplate(WidgetRef ref, String name, List<PanelWidgetConfig> widgets) {
+    final dash = DashboardConfig(
+      name: name,
+      brokerId: brokerId,
+      widgets: widgets,
+    );
+    ref.read(dashboardConfigsProvider.notifier).addDashboard(dash);
+  }
+
   void _openDashboard(BuildContext context, WidgetRef ref, DashboardConfig dashboard) async {
     ref.read(currentDashboardIdProvider.notifier).state = dashboard.id;
     
@@ -133,10 +238,10 @@ class DashboardListScreen extends ConsumerWidget {
     }
 
     if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
+      // Gunakan push agar tombol back kembali ke daftar dashboard/broker, bukan menutup aplikasi
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        (route) => false,
       );
     }
   }
