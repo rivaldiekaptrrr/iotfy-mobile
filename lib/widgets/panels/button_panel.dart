@@ -14,11 +14,19 @@ class ButtonPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionStatus = ref.watch(connectionStatusProvider);
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
+    final isError = connectionStatus.value == ConnectionStatus.error;
+    final lastError = ref.read(mqttServiceProvider).lastError;
 
     return Card(
       elevation: 2,
       child: InkWell(
-        onTap: isConnected ? () => _onButtonPressed(ref) : null,
+        onTap: () {
+          if (!isConnected) {
+            _showConnectionWarning(context, lastError);
+            return;
+          }
+          _onButtonPressed(ref);
+        },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -38,10 +46,20 @@ class ButtonPanel extends ConsumerWidget {
               ),
               if (!isConnected) ...[
                 const SizedBox(height: 8),
-                const Text(
-                  'Disconnected',
-                  style: TextStyle(color: Colors.red, fontSize: 12),
+                Text(
+                  isError ? 'MQTT error' : 'Disconnected',
+                  style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
+                  textAlign: TextAlign.center,
                 ),
+                if (isError && lastError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      lastError,
+                      style: const TextStyle(color: Colors.orange, fontSize: 11),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
               ],
             ],
           ),
@@ -58,6 +76,15 @@ class ButtonPanel extends ConsumerWidget {
       config.publishTopic!,
       config.onPayload!,
       qos: config.qos,
+    );
+  }
+
+  void _showConnectionWarning(BuildContext context, String? lastError) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(lastError != null ? 'Tidak dapat publish: $lastError' : 'Koneksi MQTT belum tersambung'),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 }

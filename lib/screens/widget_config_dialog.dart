@@ -25,6 +25,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   int _qos = 0;
   Color _selectedColor = Colors.blue;
   int? _selectedIconCodePoint;
+  bool _colorInitializedFromTheme = false;
 
   @override
   void initState() {
@@ -61,6 +62,11 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_colorInitializedFromTheme && widget.initialConfig == null) {
+      _selectedColor = Theme.of(context).colorScheme.primary;
+      _colorInitializedFromTheme = true;
+    }
+
     return Dialog(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 500),
@@ -103,6 +109,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       labelText: 'Title',
                       border: OutlineInputBorder(),
                     ),
+                    onChanged: (_) => setState(() {}),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a title';
@@ -119,6 +126,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         border: OutlineInputBorder(),
                         hintText: 'sensor/temperature',
                       ),
+                      validator: (value) {
+                        if (_needsSubscribeTopic() && (value == null || value.isEmpty)) {
+                          return 'Subscribe topic wajib diisi';
+                        }
+                        return null;
+                      },
                     ),
                   if (_needsSubscribeTopic()) const SizedBox(height: 16),
                   if (_needsPublishTopic())
@@ -147,6 +160,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                               labelText: 'ON Payload',
                               border: OutlineInputBorder(),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Payload ON tidak boleh kosong';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -157,6 +176,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                               labelText: 'OFF Payload',
                               border: OutlineInputBorder(),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Payload OFF tidak boleh kosong';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -170,6 +195,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         labelText: 'Payload',
                         border: OutlineInputBorder(),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Payload tidak boleh kosong';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -257,6 +288,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  _buildPreviewCard(),
+                  const SizedBox(height: 16),
                   if (_selectedType == WidgetType.toggle || _selectedType == WidgetType.button) ...[
                     const Text('Icon (optional):'),
                     const SizedBox(height: 8),
@@ -325,6 +358,54 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     }
   }
 
+  Widget _buildPreviewCard() {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: _selectedColor.withOpacity(0.15),
+              child: Icon(
+                _selectedIconCodePoint != null ? IconData(_selectedIconCodePoint!, fontFamily: 'MaterialIcons') : Icons.widgets,
+                color: _selectedColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _titleController.text.isEmpty ? 'Preview title' : _titleController.text,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getWidgetTypeName(_selectedType),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _selectedColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'QoS $_qos',
+                style: TextStyle(color: _selectedColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildIconOption(int codePoint, IconData iconData) {
     final isSelected = _selectedIconCodePoint == codePoint;
     return GestureDetector(
@@ -354,6 +435,18 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
 
   void _saveWidget() {
     if (_formKey.currentState!.validate()) {
+      final minValue = double.tryParse(_minValueController.text) ?? 0;
+      final maxValue = double.tryParse(_maxValueController.text) ?? 100;
+      if (minValue >= maxValue) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Min value harus lebih kecil dari Max value'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
       final config = PanelWidgetConfig(
         id: widget.initialConfig?.id,
         title: _titleController.text,
@@ -365,8 +458,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         qos: _qos,
         colorValue: _selectedColor.value,
         iconCodePoint: _selectedIconCodePoint,
-        minValue: double.tryParse(_minValueController.text) ?? 0,
-        maxValue: double.tryParse(_maxValueController.text) ?? 100,
+        minValue: minValue,
+        maxValue: maxValue,
         unit: _unitController.text.isEmpty ? null : _unitController.text,
       );
 

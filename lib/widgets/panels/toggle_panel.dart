@@ -18,11 +18,25 @@ class TogglePanel extends ConsumerStatefulWidget {
 class _TogglePanelState extends ConsumerState<TogglePanel> {
   bool _isOn = false;
   bool _isLoading = false;
+  late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
 
   @override
   void initState() {
     super.initState();
     _subscribeToTopic();
+    _messageSub = ref.listenManual<AsyncValue<app_mqtt.MqttMessageData>>(
+      mqttMessagesProvider,
+      (_, next) {
+        next.whenData((message) {
+          if (message.topic == widget.config.subscribeTopic) {
+            setState(() {
+              _isOn = message.payload.toUpperCase() == widget.config.onPayload?.toUpperCase();
+              _isLoading = false;
+            });
+          }
+        });
+      },
+    );
   }
 
   void _subscribeToTopic() {
@@ -33,20 +47,17 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    ref.listen<AsyncValue<app_mqtt.MqttMessageData>>(mqttMessagesProvider, (_, next) {
-      next.whenData((message) {
-        if (message.topic == widget.config.subscribeTopic) {
-          setState(() {
-            _isOn = message.payload.toUpperCase() == widget.config.onPayload?.toUpperCase();
-            _isLoading = false;
-          });
-        }
-      });
-    });
+  void dispose() {
+    _messageSub.close();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     final connectionStatus = ref.watch(connectionStatusProvider);
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
+    final isError = connectionStatus.value == ConnectionStatus.error;
+    final lastError = ref.read(mqttServiceProvider).lastError;
 
     return Card(
       elevation: 2,
@@ -73,18 +84,26 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
             else
               Switch(
                 value: _isOn,
-                onChanged: isConnected
-                    ? (value) {
-                        _toggleSwitch(value);
-                      }
-                    : null,
+                onChanged: (value) {
+                  if (!isConnected) {
+                    _showConnectionWarning(context, lastError);
+                    return;
+                  }
+                  _toggleSwitch(value);
+                },
                 activeColor: widget.config.color,
               ),
             const SizedBox(height: 8),
             if (!isConnected)
-              const Text(
-                'Disconnected',
-                style: TextStyle(color: Colors.red, fontSize: 12),
+              Text(
+                isError ? 'MQTT error' : 'Disconnected',
+                style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
+              ),
+            if (isError && lastError != null)
+              Text(
+                lastError,
+                style: const TextStyle(color: Colors.orange, fontSize: 11),
+                textAlign: TextAlign.center,
               ),
           ],
         ),
@@ -116,5 +135,14 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
         });
       }
     });
+  }
+
+  void _showConnectionWarning(BuildContext context, String? lastError) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(lastError != null ? 'Tidak dapat publish: $lastError' : 'Koneksi MQTT belum tersambung'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }

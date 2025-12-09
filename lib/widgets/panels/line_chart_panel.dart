@@ -19,11 +19,22 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
   final List<FlSpot> _dataPoints = [];
   String? _error;
   int _xCounter = 0;
+  late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
 
   @override
   void initState() {
     super.initState();
     _subscribeToTopic();
+    _messageSub = ref.listenManual<AsyncValue<app_mqtt.MqttMessageData>>(
+      mqttMessagesProvider,
+      (_, next) {
+        next.whenData((message) {
+          if (message.topic == widget.config.subscribeTopic) {
+            _addDataPoint(message.payload);
+          }
+        });
+      },
+    );
   }
 
   void _subscribeToTopic() {
@@ -34,17 +45,17 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    ref.listen<AsyncValue<app_mqtt.MqttMessageData>>(mqttMessagesProvider, (_, next) {
-      next.whenData((message) {
-        if (message.topic == widget.config.subscribeTopic) {
-          _addDataPoint(message.payload);
-        }
-      });
-    });
+  void dispose() {
+    _messageSub.close();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     final connectionStatus = ref.watch(connectionStatusProvider);
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
+    final isError = connectionStatus.value == ConnectionStatus.error;
+    final lastError = ref.read(mqttServiceProvider).lastError;
 
     return Card(
       elevation: 2,
@@ -66,9 +77,15 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                 textAlign: TextAlign.center,
               )
             else if (!isConnected)
-              const Text(
-                'Disconnected',
-                style: TextStyle(color: Colors.red, fontSize: 12),
+              Text(
+                isError ? 'MQTT error' : 'Disconnected',
+                style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            if (isError && lastError != null)
+              Text(
+                lastError,
+                style: const TextStyle(color: Colors.orange, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             const SizedBox(height: 8),

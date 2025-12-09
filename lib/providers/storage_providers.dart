@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/broker_config.dart';
 import '../models/dashboard_config.dart';
-import '../models/panel_widget_config.dart';
 
 // Broker Configs
 class BrokerConfigsNotifier extends StateNotifier<List<BrokerConfig>> {

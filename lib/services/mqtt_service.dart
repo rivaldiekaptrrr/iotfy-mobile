@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import '../models/broker_config.dart';
@@ -21,6 +22,9 @@ class MqttService {
   MqttServerClient? _client;
   BrokerConfig? _currentConfig;
   Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  final Duration _baseReconnectDelay = const Duration(seconds: 2);
+  final Duration _maxReconnectDelay = const Duration(seconds: 30);
 
   final _connectionStatusController = StreamController<ConnectionStatus>.broadcast();
   final _messageController = StreamController<app_mqtt.MqttMessageData>.broadcast();
@@ -45,6 +49,7 @@ class MqttService {
     try {
       _autoReconnect = autoReconnect;
       _currentConfig = config;
+      _reconnectAttempts = 0;
       _updateStatus(ConnectionStatus.connecting);
 
       await disconnect();
@@ -96,6 +101,7 @@ class MqttService {
 
       if (_client!.connectionStatus!.state == MqttConnectionState.connected) {
         _updateStatus(ConnectionStatus.connected);
+        _reconnectAttempts = 0;
         _setupMessageListener();
         return true;
       } else {
@@ -132,6 +138,7 @@ class MqttService {
 
   void _onConnected() {
     _updateStatus(ConnectionStatus.connected);
+    _reconnectAttempts = 0;
     _reconnectTimer?.cancel();
   }
 
@@ -148,7 +155,12 @@ class MqttService {
 
   void _scheduleReconnect() {
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 5), () {
+    final delaySeconds = min(
+      _maxReconnectDelay.inSeconds,
+      _baseReconnectDelay.inSeconds * pow(2, _reconnectAttempts).toInt(),
+    );
+    _reconnectAttempts++;
+    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       if (_currentConfig != null && _autoReconnect) {
         connect(_currentConfig!);
       }

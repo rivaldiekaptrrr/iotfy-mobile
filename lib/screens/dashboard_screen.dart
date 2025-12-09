@@ -21,12 +21,17 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isEditMode = false;
+  final double _gridSpacing = 16;
+  final double _gridPadding = 16;
 
   @override
   Widget build(BuildContext context) {
     final dashboard = ref.watch(currentDashboardProvider);
     final connectionStatus = ref.watch(connectionStatusProvider);
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
+    final isConnecting = connectionStatus.value == ConnectionStatus.connecting;
+    final isError = connectionStatus.value == ConnectionStatus.error;
+    final lastError = ref.watch(mqttServiceProvider).lastError;
 
     if (dashboard == null) {
       return Scaffold(
@@ -77,18 +82,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Center(
               child: Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isConnected ? Colors.green : Colors.red,
+                  Tooltip(
+                    message: isConnected
+                        ? 'Connected'
+                        : isConnecting
+                            ? 'Connecting...'
+                            : isError
+                                ? 'Error: ${lastError ?? "Unknown"}'
+                                : 'Disconnected',
+                    child: Row(
+                      children: [
+                        if (isConnecting)
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isConnected
+                                  ? Colors.green
+                                  : isError
+                                      ? Colors.orange
+                                      : Colors.red,
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isConnected
+                              ? 'Connected'
+                              : isConnecting
+                                  ? 'Connecting...'
+                                  : isError
+                                      ? 'Error'
+                                      : 'Disconnected',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isConnected ? 'Connected' : 'Disconnected',
-                    style: const TextStyle(fontSize: 12),
                   ),
                 ],
               ),
@@ -121,30 +156,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             )
           : _isEditMode
-              ? Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ReorderableWrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: dashboard.widgets.map((config) => SizedBox(
-                      key: ValueKey(config.id),
-                      width: (MediaQuery.of(context).size.width - 48) / 2, // 2 columns with padding
-                      child: _buildWidget(config),
-                    )).toList(),
-                    onReorder: (oldIndex, newIndex) => _reorderWidget(oldIndex, newIndex),
-                  ),
+              ? Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.drag_indicator),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Edit mode: drag to reorder. Use width buttons to set 1x1 or 2x1.',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildEditableWrap(context, dashboard.widgets),
+                    ),
+                  ],
                 )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 1,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: dashboard.widgets.length,
-                  itemBuilder: (context, index) => _buildWidget(dashboard.widgets[index]),
-                ),
+              : _buildReadonlyWrap(context, dashboard.widgets),
       floatingActionButton: FloatingActionButton(
         onPressed: _addWidget,
         child: const Icon(Icons.add),
@@ -192,7 +231,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
                       BoxShadow(color: Colors.black26, blurRadius: 4),
                     ]),
-                    child: const Icon(Icons.edit, size: 20, color: Colors.blue),
+                    child: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Resize width
+                GestureDetector(
+                  onTap: () => _updateWidgetSpan(config, 1),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ]),
+                    child: const Icon(Icons.stop, size: 18, color: Colors.black87),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _updateWidgetSpan(config, 2),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ]),
+                    child: const Icon(Icons.view_week, size: 18, color: Colors.black87),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -204,13 +266,82 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
                       BoxShadow(color: Colors.black26, blurRadius: 4),
                     ]),
-                    child: const Icon(Icons.close, size: 20, color: Colors.red),
+                    child: const Icon(Icons.close, size: 18, color: Colors.red),
                   ),
                 ),
               ],
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildReadonlyWrap(BuildContext context, List<PanelWidgetConfig> widgets) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth - (_gridPadding * 2);
+        final columnWidth = (availableWidth - _gridSpacing) / 2;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(_gridPadding),
+          child: Wrap(
+            spacing: _gridSpacing,
+            runSpacing: _gridSpacing,
+            children: widgets.map((config) {
+              final span = config.width.clamp(1, 2).toInt();
+              final width = span == 2 ? availableWidth : columnWidth;
+              return SizedBox(
+                key: ValueKey(config.id),
+                width: width,
+                child: _buildWidget(config),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEditableWrap(BuildContext context, List<PanelWidgetConfig> widgets) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth - (_gridPadding * 2);
+        final columnWidth = (availableWidth - _gridSpacing) / 2;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(_gridPadding),
+          child: ReorderableWrap(
+            spacing: _gridSpacing,
+            runSpacing: _gridSpacing,
+            needsLongPressDraggable: true,
+            children: widgets.map((config) {
+              final span = config.width.clamp(1, 2).toInt();
+              final width = span == 2 ? availableWidth : columnWidth;
+              return SizedBox(
+                key: ValueKey(config.id),
+                width: width,
+                child: Stack(
+                  children: [
+                    _buildWidget(config),
+                    Positioned(
+                      left: 8,
+                      bottom: 8,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.drag_indicator, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Span ${span}x1', style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            onReorder: (oldIndex, newIndex) => _reorderWidget(oldIndex, newIndex),
+          ),
+        );
+      },
     );
   }
 
@@ -250,6 +381,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final updated = dashboard.copyWith(widgets: newWidgets);
       ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
     }
+  }
+
+  void _updateWidgetSpan(PanelWidgetConfig config, int span) {
+    final dashboard = ref.read(currentDashboardProvider);
+    if (dashboard == null) return;
+    final clampedSpan = span.clamp(1, 2).toDouble();
+    final newWidgets = dashboard.widgets
+        .map((w) => w.id == config.id ? w.copyWith(width: clampedSpan) : w)
+        .toList();
+    final updated = dashboard.copyWith(widgets: newWidgets);
+    ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
   }
 
   void _reorderWidget(int oldIndex, int newIndex) {
