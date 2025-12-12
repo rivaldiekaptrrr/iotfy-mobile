@@ -59,88 +59,143 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
     final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
 
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              widget.config.title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            if (_error != null)
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-                textAlign: TextAlign.center,
-              )
-            else if (!isConnected)
-              Text(
-                isError ? 'MQTT error' : 'Disconnected',
-                style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
-              )
-            else
-              Expanded(
-                child: SfRadialGauge(
-                  axes: <RadialAxis>[
-                    RadialAxis(
-                      minimum: widget.config.minValue ?? 0,
-                      maximum: widget.config.maxValue ?? 100,
-                      ranges: <GaugeRange>[
-                        GaugeRange(
-                          startValue: widget.config.minValue ?? 0,
-                          endValue: widget.config.maxValue ?? 100,
-                          color: widget.config.color.withOpacity(0.3),
-                        ),
-                      ],
-                      pointers: <GaugePointer>[
-                        NeedlePointer(
-                          value: _currentValue,
-                          needleColor: widget.config.color,
-                          enableAnimation: true,
-                        ),
-                      ],
-                      annotations: <GaugeAnnotation>[
-                        GaugeAnnotation(
-                          widget: Text(
-                            '${_currentValue.toStringAsFixed(1)}${widget.config.unit ?? ''}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          angle: 90,
-                          positionFactor: 0.5,
-                        ),
-                      ],
+    // Simplified without Card wrapper as it is handled by PanelContainer
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            widget.config.title,
+            style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          if (_error != null)
+            Expanded(
+              child: Center(
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else if (!isConnected)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isError ? Icons.error_outline : Icons.wifi_off,
+                      color: isError ? Colors.red : Colors.grey,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isError ? 'MQTT Error' : 'Offline',
+                      style: TextStyle(
+                        color: isError ? Colors.red : Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500
+                      ),
                     ),
                   ],
                 ),
               ),
-            if (isError && lastError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  lastError,
-                  style: const TextStyle(color: Colors.orange, fontSize: 11),
-                  textAlign: TextAlign.center,
-                ),
+            )
+          else
+            Expanded(
+              child: SfRadialGauge(
+                axes: <RadialAxis>[
+                  RadialAxis(
+                    startAngle: 180,
+                    endAngle: 0,
+                    canScaleToFit: true,
+                    showLabels: false,
+                    showTicks: false,
+                    minimum: widget.config.minValue ?? 0,
+                    maximum: widget.config.maxValue ?? 100,
+                    axisLineStyle: AxisLineStyle(
+                      thickness: 0.2,
+                      thicknessUnit: GaugeSizeUnit.factor,
+                      color: scheme.surfaceContainerHighest,
+                      cornerStyle: CornerStyle.bothCurve,
+                    ),
+                    pointers: <GaugePointer>[
+                      RangePointer(
+                        value: _currentValue,
+                        width: 0.2,
+                        sizeUnit: GaugeSizeUnit.factor,
+                        cornerStyle: CornerStyle.bothCurve,
+                        gradient: SweepGradient(
+                          colors: [
+                            widget.config.color.withOpacity(0.5),
+                            widget.config.color,
+                          ],
+                          stops: const <double>[0.25, 0.75],
+                        ),
+                        enableAnimation: true,
+                        animationDuration: 1000,
+                        animationType: AnimationType.easeOutBack,
+                      ),
+                    ],
+                    annotations: <GaugeAnnotation>[
+                      GaugeAnnotation(
+                        widget: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _currentValue.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: scheme.onSurface,
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            if (widget.config.unit != null && widget.config.unit!.isNotEmpty)
+                              Text(
+                                widget.config.unit!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.secondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                        angle: 90,
+                        positionFactor: 0.1,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            if (_lastUpdated != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Updated ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}'
-                  '${_lastValue != null ? ' • ${_lastValue!.toStringAsFixed(2)}${widget.config.unit ?? ''}' : ''}',
-                  style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
-                ),
+            ),
+          if (isError && lastError != null)
+             Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                lastError,
+                style: const TextStyle(color: Colors.orange, fontSize: 10),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-          ],
-        ),
+            ),
+          if (_lastUpdated != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Updated ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}',
+                style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+              ),
+            ),
+        ],
       ),
     );
   }

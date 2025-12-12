@@ -22,6 +22,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
   double? _lastValue;
   DateTime? _lastUpdated;
+  String? _currentValueDisplay;
 
   @override
   void initState() {
@@ -60,122 +61,144 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
     final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
 
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              widget.config.title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            if (_error != null)
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-                textAlign: TextAlign.center,
-              )
-            else ...[
-              if (!isConnected)
-                Text(
-                  isError ? 'MQTT error' : 'Disconnected',
-                  style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-              if (isError && lastError != null)
-                Text(
-                  lastError,
-                  style: const TextStyle(color: Colors.orange, fontSize: 11),
-                  textAlign: TextAlign.center,
-                ),
-              if (_lastValue != null && _lastUpdated != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
+    // Simplified without Card wrapper as it is handled by PanelContainer
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+               Expanded(
+                 child: Text(
+                  widget.config.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                           ),
+               ),
+              if (_currentValueDisplay != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: widget.config.color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
-                    'Last: ${_lastValue!.toStringAsFixed(2)} @ ${_lastUpdated!.toLocal().toIso8601String().substring(11, 19)}',
-                    style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
-                    textAlign: TextAlign.center,
+                    _currentValueDisplay!,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: widget.config.color,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
             ],
-            const SizedBox(height: 8),
-            Expanded(
-              child: _dataPoints.isEmpty
-                  ? const Center(child: Text('Waiting for data...'))
-                  : LineChart(
-                      LineChartData(
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          horizontalInterval: 1,
-                          verticalInterval: 1,
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _dataPoints.isEmpty
+                ? Center(
+                    child: Text(
+                      'Waiting for data...',
+                      style: TextStyle(color: scheme.outline),
+                    ),
+                  )
+                : LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: (widget.config.maxValue ?? 100) / 4,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: scheme.outlineVariant.withOpacity(0.5),
+                            strokeWidth: 1,
+                            dashArray: [5, 5],
+                          );
+                        },
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                value.toInt().toString(),
+                                style: TextStyle(
+                                  color: scheme.outline,
+                                  fontSize: 10,
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      minX: _dataPoints.first.x,
+                      maxX: _dataPoints.last.x,
+                      minY: widget.config.minValue ?? 0,
+                      maxY: widget.config.maxValue ?? 100,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: _dataPoints,
+                          isCurved: true,
+                          curveSmoothness: 0.35,
+                          color: widget.config.color,
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [
+                                widget.config.color.withOpacity(0.3),
+                                widget.config.color.withOpacity(0.0),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 30,
-                              interval: 1,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  value.toInt().toString(),
-                                  style: const TextStyle(fontSize: 10),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                           getTooltipColor: (_) => scheme.surfaceContainerHighest,
+                           tooltipRoundedRadius: 8,
+                           getTooltipItems: (touchedSpots) {
+                              return touchedSpots.map((spot) {
+                                return LineTooltipItem(
+                                  spot.y.toStringAsFixed(2),
+                                  TextStyle(
+                                    color: scheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 );
-                              },
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 1,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  value.toStringAsFixed(0),
-                                  style: const TextStyle(fontSize: 10),
-                                );
-                              },
-                              reservedSize: 42,
-                            ),
-                          ),
+                              }).toList();
+                           }
                         ),
-                        borderData: FlBorderData(
-                          show: true,
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        minX: _dataPoints.isEmpty ? 0 : _dataPoints.first.x,
-                        maxX: _dataPoints.isEmpty ? 10 : _dataPoints.last.x,
-                        minY: widget.config.minValue ?? 0,
-                        maxY: widget.config.maxValue ?? 100,
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: _dataPoints,
-                            isCurved: true,
-                            color: widget.config.color,
-                            barWidth: 3,
-                            isStrokeCapRound: true,
-                            dotData: const FlDotData(show: false),
-                            belowBarData: BarAreaData(
-                              show: true,
-                              color: widget.config.color.withOpacity(0.2),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-            ),
-          ],
-        ),
+                  ),
+          ),
+          if (isError && lastError != null)
+             Align(
+                alignment: Alignment.center,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    lastError,
+                    style: const TextStyle(color: Colors.orange, fontSize: 10),
+                  ),
+                ),
+             ),
+        ],
       ),
     );
   }
@@ -198,6 +221,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
         _error = null;
         _lastValue = value;
         _lastUpdated = DateTime.now();
+        _currentValueDisplay = value.toStringAsFixed(2);
       });
     } catch (e) {
       setState(() {
