@@ -158,5 +158,4 @@ flutter run
 ```
 
 ## License
-
-MIT License
+Created by Rivaldi Eka Putra
