@@ -327,8 +327,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: widgets.map((config) {
               final span = config.width.clamp(1, 2).toInt();
               final width = span == 2 ? availableWidth : columnWidth;
+              // Determine minHeight based on widget type
+              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart) ? 200.0 : 160.0;
               return SizedBox(
                 width: width,
+                height: minHeight,
                 child: _buildWidget(config),
               );
             }).toList(),
@@ -350,13 +353,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: ReorderableWrap(
             spacing: _gridSpacing,
             runSpacing: _gridSpacing,
-            needsLongPressDraggable: false, // Easier drag
+            needsLongPressDraggable: true, // Requires long press to drag - more stable on mobile
+            buildDraggableFeedback: (context, constraints, child) {
+              return Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(20),
+                child: ConstrainedBox(
+                  constraints: constraints,
+                  child: child,
+                ),
+              );
+            },
             children: widgets.map((config) {
               final span = config.width.clamp(1, 2).toInt();
               final width = span == 2 ? availableWidth : columnWidth;
+              // Determine minHeight based on widget type
+              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart) ? 200.0 : 160.0;
               return SizedBox(
                 key: ValueKey(config.id),
                 width: width,
+                height: minHeight,
                 child: _buildWidget(config),
               );
             }).toList(),

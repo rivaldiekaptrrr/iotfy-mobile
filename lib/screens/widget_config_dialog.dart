@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/panel_widget_config.dart';
+import '../utils/icon_helper.dart';
 
 class WidgetConfigDialog extends StatefulWidget {
   final PanelWidgetConfig? initialConfig;
@@ -296,16 +297,9 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [
-                        _buildIconOption(Icons.lightbulb.codePoint, Icons.lightbulb),
-                        _buildIconOption(Icons.power_settings_new.codePoint, Icons.power_settings_new),
-                        _buildIconOption(Icons.toggle_on.codePoint, Icons.toggle_on),
-                        _buildIconOption(Icons.outlet.codePoint, Icons.outlet),
-                        _buildIconOption(Icons.thermostat.codePoint, Icons.thermostat),
-                        _buildIconOption(Icons.water_drop.codePoint, Icons.water_drop),
-                        _buildIconOption(Icons.air.codePoint, Icons.air),
-                        _buildIconOption(Icons.sensors.codePoint, Icons.sensors),
-                      ],
+                      children: IconHelper.availableIcons.map((iconData) {
+                        return _buildIconOption(iconData.codePoint, iconData);
+                      }).toList(),
                     ),
                     const SizedBox(height: 8),
                   ],

@@ -60,28 +60,38 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
     final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
 
-    return Card(
-      elevation: 0,
+    // No Card wrapper - handled by PanelContainer
+    final icon = IconHelper.getIcon(widget.config.iconCodePoint);
+    
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 140),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (widget.config.iconCodePoint != null && IconHelper.getIcon(widget.config.iconCodePoint) != null)
+            if (icon != null)
               Icon(
-                IconHelper.getIcon(widget.config.iconCodePoint)!,
+                icon,
                 size: 32,
-                color: widget.config.color,
+                color: _isOn ? widget.config.color : scheme.onSurfaceVariant,
               ),
-            const SizedBox(height: 8),
+            if (icon != null) const SizedBox(height: 8),
             Text(
               widget.config.title,
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 16),
             if (_isLoading)
-              const CircularProgressIndicator()
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             else
               Switch(
                 value: _isOn,
@@ -93,19 +103,20 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
                   _toggleSwitch(value);
                 },
                 activeColor: widget.config.color,
-                trackOutlineColor: MaterialStatePropertyAll(scheme.outlineVariant),
+                trackOutlineColor: WidgetStatePropertyAll(scheme.outlineVariant),
               ),
             const SizedBox(height: 8),
             if (!isConnected)
-              Text(
-                isError ? 'MQTT error' : 'Disconnected',
-                style: TextStyle(color: isError ? Colors.orange : Colors.red, fontSize: 12),
-              ),
-            if (isError && lastError != null)
-              Text(
-                lastError,
-                style: const TextStyle(color: Colors.orange, fontSize: 11),
-                textAlign: TextAlign.center,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (isError ? Colors.red : Colors.grey).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  isError ? 'Error' : 'Offline',
+                  style: TextStyle(color: isError ? Colors.red : Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
+                ),
               ),
           ],
         ),
