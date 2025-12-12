@@ -260,32 +260,36 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Color: '),
-                      const SizedBox(width: 16),
-                      ...[ Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple].map((color) {
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedColor = color;
-                            });
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: _selectedColor == color ? Colors.black : Colors.transparent,
-                                width: 3,
+                      const Text('Color:'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.teal, Colors.pink, Colors.indigo].map((color) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedColor = color;
+                              });
+                            },
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: _selectedColor == color ? Colors.black : Colors.transparent,
+                                  width: 3,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
