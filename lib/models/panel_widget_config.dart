@@ -35,6 +35,7 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(16) String? unit;
   @HiveField(17) int? maxDataPoints;
   @HiveField(18) bool isMovingMode;
+  @HiveField(19) int idleTimeoutSeconds;
 
   PanelWidgetConfig({
     String? id,
@@ -56,6 +57,7 @@ class PanelWidgetConfig extends HiveObject {
     this.unit,
     this.maxDataPoints = 50,
     this.isMovingMode = false,
+    this.idleTimeoutSeconds = 10,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -84,6 +86,7 @@ class PanelWidgetConfig extends HiveObject {
     String? unit,
     int? maxDataPoints,
     bool? isMovingMode,
+    int? idleTimeoutSeconds,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -105,6 +108,7 @@ class PanelWidgetConfig extends HiveObject {
       unit: unit ?? this.unit,
       maxDataPoints: maxDataPoints ?? this.maxDataPoints,
       isMovingMode: isMovingMode ?? this.isMovingMode,
+      idleTimeoutSeconds: idleTimeoutSeconds ?? this.idleTimeoutSeconds,
     );
   }
 }

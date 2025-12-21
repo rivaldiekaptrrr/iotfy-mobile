@@ -28,6 +28,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   int? _selectedIconCodePoint;
   bool _colorInitializedFromTheme = false;
   bool _isMovingMode = false;
+  late TextEditingController _idleTimeoutController;
 
   @override
   void initState() {
@@ -47,6 +48,9 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _selectedColor = widget.initialConfig!.color;
       _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
       _isMovingMode = widget.initialConfig!.isMovingMode;
+      _idleTimeoutController = TextEditingController(text: widget.initialConfig!.idleTimeoutSeconds.toString());
+    } else {
+      _idleTimeoutController = TextEditingController(text: '10');
     }
   }
 
@@ -60,6 +64,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _minValueController.dispose();
     _maxValueController.dispose();
     _unitController.dispose();
+    _idleTimeoutController.dispose();
     super.dispose();
   }
 
@@ -256,6 +261,29 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       },
                       contentPadding: EdgeInsets.zero,
                     ),
+                    if (_isMovingMode) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _idleTimeoutController,
+                        decoration: const InputDecoration(
+                          labelText: 'Idle Timeout (detik)',
+                          border: OutlineInputBorder(),
+                          hintText: '10',
+                          helperText: 'Reset path jika tidak ada data selama X detik',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Masukkan nilai timeout';
+                          }
+                          final val = int.tryParse(value);
+                          if (val == null || val < 1) {
+                            return 'Minimal 1 detik';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 16),
                   ],
                   DropdownButtonFormField<int>(
@@ -479,6 +507,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         maxValue: maxValue,
         unit: _unitController.text.isEmpty ? null : _unitController.text,
         isMovingMode: _isMovingMode,
+        idleTimeoutSeconds: int.tryParse(_idleTimeoutController.text) ?? 10,
       );
 
       Navigator.pop(context, config);
