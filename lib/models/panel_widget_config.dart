@@ -11,6 +11,7 @@ enum WidgetType {
   @HiveField(2) gauge,
   @HiveField(3) lineChart,
   @HiveField(4) text,
+  @HiveField(5) map,
 }
 
 @HiveType(typeId: 3)
@@ -33,6 +34,7 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(15) double? maxValue;
   @HiveField(16) String? unit;
   @HiveField(17) int? maxDataPoints;
+  @HiveField(18) bool isMovingMode;
 
   PanelWidgetConfig({
     String? id,
@@ -53,6 +55,7 @@ class PanelWidgetConfig extends HiveObject {
     this.maxValue = 100,
     this.unit,
     this.maxDataPoints = 50,
+    this.isMovingMode = false,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -80,6 +83,7 @@ class PanelWidgetConfig extends HiveObject {
     double? maxValue,
     String? unit,
     int? maxDataPoints,
+    bool? isMovingMode,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -100,6 +104,7 @@ class PanelWidgetConfig extends HiveObject {
       maxValue: maxValue ?? this.maxValue,
       unit: unit ?? this.unit,
       maxDataPoints: maxDataPoints ?? this.maxDataPoints,
+      isMovingMode: isMovingMode ?? this.isMovingMode,
     );
   }
 }

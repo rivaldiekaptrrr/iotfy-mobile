@@ -35,13 +35,14 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       maxValue: fields[15] as double?,
       unit: fields[16] as String?,
       maxDataPoints: fields[17] as int?,
+      isMovingMode: fields[18] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, PanelWidgetConfig obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -77,7 +78,9 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       ..writeByte(16)
       ..write(obj.unit)
       ..writeByte(17)
-      ..write(obj.maxDataPoints);
+      ..write(obj.maxDataPoints)
+      ..writeByte(18)
+      ..write(obj.isMovingMode);
   }
 
   @override
@@ -108,6 +111,8 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         return WidgetType.lineChart;
       case 4:
         return WidgetType.text;
+      case 5:
+        return WidgetType.map;
       default:
         return WidgetType.toggle;
     }
@@ -130,6 +135,9 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         break;
       case WidgetType.text:
         writer.writeByte(4);
+        break;
+      case WidgetType.map:
+        writer.writeByte(5);
         break;
     }
   }

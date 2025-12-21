@@ -27,6 +27,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   Color _selectedColor = Colors.blue;
   int? _selectedIconCodePoint;
   bool _colorInitializedFromTheme = false;
+  bool _isMovingMode = false;
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _qos = widget.initialConfig!.qos;
       _selectedColor = widget.initialConfig!.color;
       _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
+      _isMovingMode = widget.initialConfig!.isMovingMode;
     }
   }
 
@@ -242,6 +244,20 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
+                  if (_selectedType == WidgetType.map) ...[
+                    SwitchListTile(
+                      title: const Text('Moving Mode'),
+                      subtitle: const Text('Realtime tracking & path'),
+                      value: _isMovingMode,
+                      onChanged: (value) {
+                        setState(() {
+                          _isMovingMode = value;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   DropdownButtonFormField<int>(
                     value: _qos,
                     decoration: const InputDecoration(
@@ -334,7 +350,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   bool _needsSubscribeTopic() {
     return _selectedType == WidgetType.toggle ||
         _selectedType == WidgetType.gauge ||
-        _selectedType == WidgetType.lineChart;
+        _selectedType == WidgetType.lineChart ||
+        _selectedType == WidgetType.map;
   }
 
   bool _needsPublishTopic() {
@@ -353,6 +370,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Line Chart';
       case WidgetType.text:
         return 'Text Display';
+      case WidgetType.map:
+        return 'Map Tracker';
     }
   }
 
@@ -459,6 +478,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         minValue: minValue,
         maxValue: maxValue,
         unit: _unitController.text.isEmpty ? null : _unitController.text,
+        isMovingMode: _isMovingMode,
       );
 
       Navigator.pop(context, config);

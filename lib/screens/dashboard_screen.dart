@@ -13,6 +13,7 @@ import '../widgets/panels/toggle_panel.dart';
 import '../widgets/panels/button_panel.dart';
 import '../widgets/panels/gauge_panel.dart';
 import '../widgets/panels/line_chart_panel.dart';
+import '../widgets/panels/map_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
 
@@ -299,6 +300,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           )
         );
         break;
+      case WidgetType.map:
+        panel = MapPanel(config: config);
+        break;
     }
 
     return PanelContainer(
@@ -328,7 +332,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final span = config.width.clamp(1, 2).toInt();
               final width = span == 2 ? availableWidth : columnWidth;
               // Determine minHeight based on widget type
-              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart) ? 200.0 : 160.0;
+              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart || config.type == WidgetType.map) ? 200.0 : 160.0;
               return SizedBox(
                 width: width,
                 height: minHeight,
@@ -368,7 +372,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final span = config.width.clamp(1, 2).toInt();
               final width = span == 2 ? availableWidth : columnWidth;
               // Determine minHeight based on widget type
-              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart) ? 200.0 : 160.0;
+              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart || config.type == WidgetType.map) ? 200.0 : 160.0;
               return SizedBox(
                 key: ValueKey(config.id),
                 width: width,
