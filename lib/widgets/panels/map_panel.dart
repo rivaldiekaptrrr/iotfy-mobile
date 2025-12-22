@@ -46,6 +46,14 @@ class _MapPanelState extends ConsumerState<MapPanel> {
   double _hdop = 0.0;
   bool _hasFix = false;
   String? _timestamp;
+  
+  // Historical Playback Mode
+  List<LatLng> _historyPath = [];  // Simpan path terakhir untuk playback
+  bool _isPlayingHistory = false;  // Apakah sedang memutar animasi
+  int _playbackIndex = 0;  // Index posisi animasi saat ini
+  Timer? _playbackTimer;  // Timer untuk animasi
+  static const int _playbackIntervalMs = 200;  // Interval animasi (ms)
+  bool _isIdle = false;  // Status idle (setelah timeout)
 
   @override
   void initState() {
@@ -92,12 +100,17 @@ class _MapPanelState extends ConsumerState<MapPanel> {
     if (!_isMovingMode) return;
     
     setState(() {
+      // Simpan path ke history sebelum clear (untuk playback)
+      if (_path.length > 1) {
+        _historyPath = List<LatLng>.from(_path);
+      }
       _path.clear();
+      _isIdle = true;
       _showResetIndicator = true;
     });
     
-    // Hide indicator after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    // Hide indicator after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showResetIndicator = false;
@@ -114,11 +127,66 @@ class _MapPanelState extends ConsumerState<MapPanel> {
         // Clear path ketika switch ke static mode
         _path.clear();
         _idleTimer?.cancel();
+        _stopPlayback();
       } else {
         // Start idle timer ketika switch ke moving mode
         _startIdleTimer();
       }
     });
+  }
+
+  // ============ HISTORICAL PLAYBACK METHODS ============
+  
+  void _startPlayback() {
+    if (_historyPath.length < 2) return;
+    
+    setState(() {
+      _isPlayingHistory = true;
+      _playbackIndex = 0;
+    });
+    
+    _playbackTimer = Timer.periodic(
+      Duration(milliseconds: _playbackIntervalMs),
+      _onPlaybackTick,
+    );
+  }
+  
+  void _stopPlayback() {
+    _playbackTimer?.cancel();
+    _playbackTimer = null;
+    if (mounted) {
+      setState(() {
+        _isPlayingHistory = false;
+        _playbackIndex = 0;
+      });
+    }
+  }
+  
+  void _onPlaybackTick(Timer timer) {
+    if (!mounted || _historyPath.isEmpty) {
+      _stopPlayback();
+      return;
+    }
+    
+    setState(() {
+      _playbackIndex++;
+      // Loop kembali ke awal
+      if (_playbackIndex >= _historyPath.length) {
+        _playbackIndex = 0;
+      }
+    });
+    
+    // Move camera to follow playback position
+    if (_mapReady && _playbackIndex < _historyPath.length) {
+      _mapController.move(_historyPath[_playbackIndex], _mapController.camera.zoom);
+    }
+  }
+  
+  // Posisi marker saat playback
+  LatLng get _playbackPosition {
+    if (_historyPath.isEmpty) return _currentPosition;
+    if (_playbackIndex >= _historyPath.length) return _historyPath.last;
+    return _historyPath[_playbackIndex];
   }
 
   // Hitung jarak antara dua koordinat dalam meter
@@ -151,6 +219,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
     _messageSub?.close();
     _mapController.dispose();
     _idleTimer?.cancel();
+    _playbackTimer?.cancel();
     super.dispose();
   }
 
@@ -178,9 +247,16 @@ class _MapPanelState extends ConsumerState<MapPanel> {
         final newPos = LatLng(lat, lon);
 
         if (mounted) {
+          // Stop playback dan reset idle status saat ada data baru
+          if (_isPlayingHistory || _isIdle) {
+            _stopPlayback();
+            _historyPath.clear();  // Clear history karena tracking baru dimulai
+          }
+          
           setState(() {
             _currentPosition = newPos;
             _hasReceivedData = true;
+            _isIdle = false;  // Reset idle status
             
             // Parse GPS data tambahan
             if (data.containsKey('speed_kmh') && data['speed_kmh'] is num) {
@@ -301,33 +377,52 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                 maxZoom: 19,
               ),
               
-              // Path polyline for moving mode
-              if (_isMovingMode && _path.length > 1)
+              // Path polyline - untuk tracking atau playback
+              if ((_isMovingMode && _path.length > 1) || (_isPlayingHistory && _historyPath.length > 1))
                 PolylineLayer(
                   polylines: [
                     Polyline(
-                      points: _path,
-                      color: widget.config.color,
+                      points: _isPlayingHistory ? _historyPath : _path,
+                      color: _isPlayingHistory 
+                          ? widget.config.color.withOpacity(0.6) 
+                          : widget.config.color,
                       strokeWidth: 4.0,
                     ),
                   ],
                 ),
               
-              // Marker layer dengan rotasi berdasarkan heading
-              if (_hasReceivedData)
+              // History path trail saat playback (menunjukkan progress)
+              if (_isPlayingHistory && _playbackIndex > 0)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _historyPath.sublist(0, _playbackIndex + 1),
+                      color: widget.config.color,
+                      strokeWidth: 5.0,
+                    ),
+                  ],
+                ),
+              
+              // Marker layer - posisi berdasarkan mode (live atau playback)
+              if (_hasReceivedData || _isPlayingHistory)
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: _currentPosition,
-                      width: 44,
-                      height: 44,
+                      point: _isPlayingHistory ? _playbackPosition : _currentPosition,
+                      width: 48,
+                      height: 48,
                       child: Transform.rotate(
-                        angle: _isMovingMode ? (_course * 3.14159265359 / 180) : 0,
+                        angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: widget.config.color,
+                            color: _isPlayingHistory 
+                                ? Colors.orange  // Warna berbeda saat playback
+                                : widget.config.color,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
+                            border: Border.all(
+                              color: Colors.white, 
+                              width: _isPlayingHistory ? 4 : 3,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.3),
@@ -340,14 +435,14 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                             alignment: Alignment.center,
                             children: [
                               Icon(
-                                _isMovingMode 
-                                    ? Icons.navigation 
+                                _isMovingMode || _isPlayingHistory
+                                    ? Icons.two_wheeler  // Ikon motor 🏍️
                                     : Icons.location_on,
                                 color: Colors.white,
-                                size: 22,
+                                size: 24,
                               ),
                               // Speed indicator ring jika bergerak
-                              if (_isMovingMode && _speedKmh > 0)
+                              if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
                                 Positioned(
                                   bottom: 0,
                                   right: 0,
@@ -376,7 +471,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
         Positioned(
           top: 8,
           left: 8,
-          right: 92, // Leave space for toggle and fullscreen buttons
+          right: 136, // Leave space for buttons
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -393,9 +488,11 @@ class _MapPanelState extends ConsumerState<MapPanel> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  _isMovingMode ? Icons.navigation : Icons.location_on,
+                  _isMovingMode || _isPlayingHistory 
+                      ? Icons.two_wheeler  // Ikon motor
+                      : Icons.location_on,
                   size: 16,
-                  color: widget.config.color,
+                  color: _isPlayingHistory ? Colors.orange : widget.config.color,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -407,34 +504,50 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (_isMovingMode) ...[
+                // Status badge
+                if (_isMovingMode || _isPlayingHistory) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: widget.config.color.withOpacity(0.2),
+                      color: _isPlayingHistory 
+                          ? Colors.orange.withOpacity(0.2) 
+                          : widget.config.color.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'LIVE',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: widget.config.color,
-                          ),
-                        ),
-                        if (_path.isNotEmpty) ...[
-                          const SizedBox(width: 4),
+                        if (_isPlayingHistory) ...[
+                          const Icon(Icons.play_arrow, size: 10, color: Colors.orange),
+                          const SizedBox(width: 2),
                           Text(
-                            '(${_path.length})',
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: widget.config.color.withOpacity(0.7),
+                            'REPLAY',
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
                             ),
                           ),
+                        ] else ...[
+                          Text(
+                            'LIVE',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: widget.config.color,
+                            ),
+                          ),
+                          if (_path.isNotEmpty) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              '(${_path.length})',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: widget.config.color.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),
@@ -444,6 +557,37 @@ class _MapPanelState extends ConsumerState<MapPanel> {
             ),
           ),
         ),
+        // Playback button - muncul ketika ada history dan idle
+        if (_isIdle && _historyPath.length > 1)
+          Positioned(
+            top: 8,
+            right: 88, // Sebelah toggle button
+            child: Material(
+              color: _isPlayingHistory 
+                  ? Colors.orange 
+                  : theme.colorScheme.surface.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(8),
+              elevation: 2,
+              child: InkWell(
+                onTap: _isPlayingHistory ? _stopPlayback : _startPlayback,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    _isPlayingHistory ? Icons.stop : Icons.play_arrow,
+                    size: 20,
+                    color: _isPlayingHistory 
+                        ? Colors.white 
+                        : Colors.orange,
+                  ),
+                ),
+              ),
+            ),
+          ),
 
         // Mode toggle button
         Positioned(
@@ -706,6 +850,14 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
   double _hdop = 0.0;
   bool _hasFix = false;
   String? _timestamp;
+  
+  // Historical Playback Mode
+  List<LatLng> _historyPath = [];
+  bool _isPlayingHistory = false;
+  int _playbackIndex = 0;
+  Timer? _playbackTimer;
+  static const int _playbackIntervalMs = 200;
+  bool _isIdle = false;
 
   @override
   void initState() {
@@ -754,7 +906,12 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
     if (!_isMovingMode) return;
     
     setState(() {
+      // Simpan path ke history sebelum clear
+      if (_path.length > 1) {
+        _historyPath = List<LatLng>.from(_path);
+      }
       _path.clear();
+      _isIdle = true;
       _showResetIndicator = true;
     });
     
@@ -766,16 +923,20 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
             const Icon(Icons.refresh, color: Colors.white),
             const SizedBox(width: 8),
             Text('Path reset - tidak ada data selama ${widget.config.idleTimeoutSeconds} detik'),
+            if (_historyPath.length > 1) ...[
+              const SizedBox(width: 8),
+              const Text('| Tap ▶ untuk replay', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
           ],
         ),
         backgroundColor: Colors.orange,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
       ),
     );
     
-    // Hide indicator after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    // Hide indicator after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showResetIndicator = false;
@@ -793,6 +954,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
         _path.clear();
         _idleTimer?.cancel();
         _followMode = false;
+        _stopPlayback();
       } else {
         // Start idle timer dan follow mode ketika switch ke moving mode
         _followMode = true;
@@ -806,7 +968,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
         content: Row(
           children: [
             Icon(
-              _isMovingMode ? Icons.timeline : Icons.pin_drop,
+              _isMovingMode ? Icons.two_wheeler : Icons.pin_drop,
               color: Colors.white,
             ),
             const SizedBox(width: 8),
@@ -826,11 +988,63 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
     return distance.as(LengthUnit.Meter, from, to);
   }
 
+  // ============ HISTORICAL PLAYBACK METHODS ============
+  
+  void _startPlayback() {
+    if (_historyPath.length < 2) return;
+    
+    setState(() {
+      _isPlayingHistory = true;
+      _playbackIndex = 0;
+    });
+    
+    _playbackTimer = Timer.periodic(
+      Duration(milliseconds: _playbackIntervalMs),
+      _onPlaybackTick,
+    );
+  }
+  
+  void _stopPlayback() {
+    _playbackTimer?.cancel();
+    _playbackTimer = null;
+    if (mounted) {
+      setState(() {
+        _isPlayingHistory = false;
+        _playbackIndex = 0;
+      });
+    }
+  }
+  
+  void _onPlaybackTick(Timer timer) {
+    if (!mounted || _historyPath.isEmpty) {
+      _stopPlayback();
+      return;
+    }
+    
+    setState(() {
+      _playbackIndex++;
+      if (_playbackIndex >= _historyPath.length) {
+        _playbackIndex = 0;
+      }
+    });
+    
+    if (_mapReady && _playbackIndex < _historyPath.length) {
+      _mapController.move(_historyPath[_playbackIndex], _mapController.camera.zoom);
+    }
+  }
+  
+  LatLng get _playbackPosition {
+    if (_historyPath.isEmpty) return _currentPosition;
+    if (_playbackIndex >= _historyPath.length) return _historyPath.last;
+    return _historyPath[_playbackIndex];
+  }
+
   @override
   void dispose() {
     _messageSub?.close();
     _mapController.dispose();
     _idleTimer?.cancel();
+    _playbackTimer?.cancel();
     super.dispose();
   }
 
@@ -855,9 +1069,16 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
         final newPos = LatLng(lat, lon);
 
         if (mounted) {
+          // Stop playback dan reset idle saat ada data baru
+          if (_isPlayingHistory || _isIdle) {
+            _stopPlayback();
+            _historyPath.clear();
+          }
+          
           setState(() {
             _currentPosition = newPos;
             _hasReceivedData = true;
+            _isIdle = false;
             
             // Parse GPS data tambahan
             if (data.containsKey('speed_kmh') && data['speed_kmh'] is num) {
@@ -991,9 +1212,11 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
         title: Row(
           children: [
             Icon(
-              _isMovingMode ? Icons.navigation : Icons.location_on,
+              _isMovingMode || _isPlayingHistory 
+                  ? Icons.two_wheeler  // Ikon motor
+                  : Icons.location_on,
               size: 20,
-              color: widget.config.color,
+              color: _isPlayingHistory ? Colors.orange : widget.config.color,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -1002,33 +1225,49 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (_isMovingMode)
+            // Status badge
+            if (_isMovingMode || _isPlayingHistory)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: widget.config.color.withOpacity(0.2),
+                  color: _isPlayingHistory 
+                      ? Colors.orange.withOpacity(0.2)
+                      : widget.config.color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'LIVE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: widget.config.color,
-                      ),
-                    ),
-                    if (_path.isNotEmpty) ...[
+                    if (_isPlayingHistory) ...[
+                      const Icon(Icons.play_arrow, size: 12, color: Colors.orange),
                       const SizedBox(width: 4),
                       Text(
-                        '(${_path.length})',
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: widget.config.color.withOpacity(0.7),
+                        'REPLAY ${_playbackIndex + 1}/${_historyPath.length}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
                         ),
                       ),
+                    ] else ...[
+                      Text(
+                        'LIVE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: widget.config.color,
+                        ),
+                      ),
+                      if (_path.isNotEmpty) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '(${_path.length})',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: widget.config.color.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -1040,6 +1279,25 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
+          // Playback button - muncul ketika ada history dan idle
+          if (_isIdle && _historyPath.length > 1)
+            Container(
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: _isPlayingHistory 
+                    ? Colors.orange 
+                    : Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                onPressed: _isPlayingHistory ? _stopPlayback : _startPlayback,
+                icon: Icon(
+                  _isPlayingHistory ? Icons.stop : Icons.play_arrow,
+                  color: _isPlayingHistory ? Colors.white : Colors.orange,
+                ),
+                tooltip: _isPlayingHistory ? 'Stop Replay' : 'Play History',
+              ),
+            ),
           // Mode toggle button
           Container(
             margin: const EdgeInsets.only(right: 8),
@@ -1088,33 +1346,52 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                 maxZoom: 19,
               ),
               
-              // Path polyline
-              if (_isMovingMode && _path.length > 1)
+              // Path polyline - untuk tracking atau playback
+              if ((_isMovingMode && _path.length > 1) || (_isPlayingHistory && _historyPath.length > 1))
                 PolylineLayer(
                   polylines: [
                     Polyline(
-                      points: _path,
-                      color: widget.config.color,
+                      points: _isPlayingHistory ? _historyPath : _path,
+                      color: _isPlayingHistory 
+                          ? widget.config.color.withOpacity(0.6) 
+                          : widget.config.color,
                       strokeWidth: 5.0,
                     ),
                   ],
                 ),
               
-              // Marker dengan rotasi berdasarkan heading
-              if (_hasReceivedData)
+              // History path trail saat playback
+              if (_isPlayingHistory && _playbackIndex > 0)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _historyPath.sublist(0, _playbackIndex + 1),
+                      color: widget.config.color,
+                      strokeWidth: 6.0,
+                    ),
+                  ],
+                ),
+              
+              // Marker - posisi berdasarkan mode (live atau playback)
+              if (_hasReceivedData || _isPlayingHistory)
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: _currentPosition,
-                      width: 56,
-                      height: 56,
+                      point: _isPlayingHistory ? _playbackPosition : _currentPosition,
+                      width: 60,
+                      height: 60,
                       child: Transform.rotate(
-                        angle: _isMovingMode ? (_course * 3.14159265359 / 180) : 0,
+                        angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: widget.config.color,
+                            color: _isPlayingHistory 
+                                ? Colors.orange 
+                                : widget.config.color,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
+                            border: Border.all(
+                              color: Colors.white, 
+                              width: _isPlayingHistory ? 5 : 4,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.3),
@@ -1127,14 +1404,14 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                             alignment: Alignment.center,
                             children: [
                               Icon(
-                                _isMovingMode 
-                                    ? Icons.navigation 
+                                _isMovingMode || _isPlayingHistory
+                                    ? Icons.two_wheeler  // Ikon motor 🏍️
                                     : Icons.location_on,
                                 color: Colors.white,
-                                size: 28,
+                                size: 30,
                               ),
                               // Speed indicator ring
-                              if (_isMovingMode && _speedKmh > 0)
+                              if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
                                 Positioned(
                                   bottom: 0,
                                   right: 0,
