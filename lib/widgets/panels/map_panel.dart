@@ -27,13 +27,30 @@ class _MapPanelState extends ConsumerState<MapPanel> {
   bool _isFirstUpdate = true;
   bool _mapReady = false;
   
+  // Local moving mode state - dapat di-toggle langsung dari UI
+  late bool _isMovingMode;
+  
+  // LRU Path Management
+  static const int _maxPathPoints = 500;
+  static const double _minDistanceMeters = 5.0; // Minimum jarak untuk menambah point baru
+  
   // Idle timeout
   Timer? _idleTimer;
   bool _showResetIndicator = false;
+  
+  // GPS Data tambahan
+  double _speedKmh = 0.0;
+  double _course = 0.0;  // Heading dalam derajat (0-360)
+  double _altitude = 0.0;
+  int _satellites = 0;
+  double _hdop = 0.0;
+  bool _hasFix = false;
+  String? _timestamp;
 
   @override
   void initState() {
     super.initState();
+    _isMovingMode = widget.config.isMovingMode; // Inisialisasi dari config
     _subscribeToTopic();
     _setupMessageListener();
   }
@@ -61,7 +78,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
   void _startIdleTimer() {
     _idleTimer?.cancel();
     
-    if (!widget.config.isMovingMode) return;
+    if (!_isMovingMode) return;
     if (widget.config.idleTimeoutSeconds <= 0) return;
     
     _idleTimer = Timer(
@@ -72,7 +89,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
 
   void _onIdleTimeout() {
     if (!mounted) return;
-    if (!widget.config.isMovingMode) return;
+    if (!_isMovingMode) return;
     
     setState(() {
       _path.clear();
@@ -89,15 +106,37 @@ class _MapPanelState extends ConsumerState<MapPanel> {
     });
   }
 
+  // Toggle moving mode dari UI
+  void _toggleMovingMode() {
+    setState(() {
+      _isMovingMode = !_isMovingMode;
+      if (!_isMovingMode) {
+        // Clear path ketika switch ke static mode
+        _path.clear();
+        _idleTimer?.cancel();
+      } else {
+        // Start idle timer ketika switch ke moving mode
+        _startIdleTimer();
+      }
+    });
+  }
+
+  // Hitung jarak antara dua koordinat dalam meter
+  double _calculateDistance(LatLng from, LatLng to) {
+    const Distance distance = Distance();
+    return distance.as(LengthUnit.Meter, from, to);
+  }
+
   @override
   void didUpdateWidget(MapPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.config.subscribeTopic != oldWidget.config.subscribeTopic) {
       _subscribeToTopic();
     }
+    // Sync isMovingMode jika config berubah dari luar (optional)
     if (widget.config.isMovingMode != oldWidget.config.isMovingMode) {
-      // Clear path when switching to static mode
-      if (!widget.config.isMovingMode) {
+      _isMovingMode = widget.config.isMovingMode;
+      if (!_isMovingMode) {
         _path.clear();
         _idleTimer?.cancel();
       }
@@ -122,30 +161,71 @@ class _MapPanelState extends ConsumerState<MapPanel> {
       final data = json.decode(payload);
       if (data is Map<String, dynamic> &&
           data.containsKey('lat') &&
-          data.containsKey('lng')) {
+          (data.containsKey('lon') || data.containsKey('lng'))) {
         final latValue = data['lat'];
-        final lngValue = data['lng'];
+        // Support both 'lon' dan 'lng' untuk kompatibilitas
+        final lonValue = data['lon'] ?? data['lng'];
         
-        // Validate lat/lng are numbers
-        if (latValue is! num || lngValue is! num) return;
+        // Validate lat/lon are numbers
+        if (latValue is! num || lonValue is! num) return;
         
         final lat = latValue.toDouble();
-        final lng = lngValue.toDouble();
+        final lon = lonValue.toDouble();
         
         // Validate coordinate ranges
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return;
         
-        final newPos = LatLng(lat, lng);
+        final newPos = LatLng(lat, lon);
 
         if (mounted) {
           setState(() {
             _currentPosition = newPos;
             _hasReceivedData = true;
             
-            // Update path for moving mode
-            if (widget.config.isMovingMode) {
-              if (_path.isEmpty || _path.last != _currentPosition) {
+            // Parse GPS data tambahan
+            if (data.containsKey('speed_kmh') && data['speed_kmh'] is num) {
+              _speedKmh = (data['speed_kmh'] as num).toDouble();
+            }
+            if (data.containsKey('course') && data['course'] is num) {
+              _course = (data['course'] as num).toDouble();
+            }
+            if (data.containsKey('altitude') && data['altitude'] is num) {
+              _altitude = (data['altitude'] as num).toDouble();
+            }
+            if (data.containsKey('satellites') && data['satellites'] is num) {
+              _satellites = (data['satellites'] as num).toInt();
+            }
+            if (data.containsKey('hdop') && data['hdop'] is num) {
+              _hdop = (data['hdop'] as num).toDouble();
+            }
+            if (data.containsKey('fix')) {
+              _hasFix = data['fix'] == true;
+            }
+            if (data.containsKey('timestamp') && data['timestamp'] is String) {
+              _timestamp = data['timestamp'] as String;
+            }
+            
+            // Update path for moving mode dengan distance threshold dan LRU
+            if (_isMovingMode) {
+              bool shouldAddPoint = false;
+              
+              if (_path.isEmpty) {
+                shouldAddPoint = true;
+              } else {
+                // Hanya tambah point jika jarak >= minimum threshold
+                final distance = _calculateDistance(_path.last, _currentPosition);
+                if (distance >= _minDistanceMeters) {
+                  shouldAddPoint = true;
+                }
+              }
+              
+              if (shouldAddPoint) {
                 _path.add(_currentPosition);
+                
+                // LRU Strategy: hapus point terlama jika melebihi max
+                while (_path.length > _maxPathPoints) {
+                  _path.removeAt(0);
+                }
               }
             }
           });
@@ -166,7 +246,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
     if (!_mapReady) return;
     
     try {
-      if (widget.config.isMovingMode) {
+      if (_isMovingMode) {
         // Smooth animation for moving mode
         _mapController.move(_currentPosition, _mapController.camera.zoom);
       } else if (_isFirstUpdate) {
@@ -187,6 +267,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
           currentPosition: _currentPosition,
           path: List.from(_path),
           hasData: _hasReceivedData,
+          isMovingMode: _isMovingMode, // Pass current moving mode state
         ),
       ),
     );
@@ -221,7 +302,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
               ),
               
               // Path polyline for moving mode
-              if (widget.config.isMovingMode && _path.length > 1)
+              if (_isMovingMode && _path.length > 1)
                 PolylineLayer(
                   polylines: [
                     Polyline(
@@ -232,33 +313,56 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                   ],
                 ),
               
-              // Marker layer
+              // Marker layer dengan rotasi berdasarkan heading
               if (_hasReceivedData)
                 MarkerLayer(
                   markers: [
                     Marker(
                       point: _currentPosition,
-                      width: 40,
-                      height: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: widget.config.color,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          widget.config.isMovingMode 
-                              ? Icons.navigation 
-                              : Icons.location_on,
-                          color: Colors.white,
-                          size: 20,
+                      width: 44,
+                      height: 44,
+                      child: Transform.rotate(
+                        angle: _isMovingMode ? (_course * 3.14159265359 / 180) : 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: widget.config.color,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(
+                                _isMovingMode 
+                                    ? Icons.navigation 
+                                    : Icons.location_on,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              // Speed indicator ring jika bergerak
+                              if (_isMovingMode && _speedKmh > 0)
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 1.5),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -272,7 +376,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
         Positioned(
           top: 8,
           left: 8,
-          right: 48, // Leave space for fullscreen button
+          right: 92, // Leave space for toggle and fullscreen buttons
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -289,7 +393,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  widget.config.isMovingMode ? Icons.navigation : Icons.location_on,
+                  _isMovingMode ? Icons.navigation : Icons.location_on,
                   size: 16,
                   color: widget.config.color,
                 ),
@@ -303,7 +407,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (widget.config.isMovingMode) ...[
+                if (_isMovingMode) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -311,17 +415,63 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                       color: widget.config.color.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(
-                      'LIVE',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: widget.config.color,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: widget.config.color,
+                          ),
+                        ),
+                        if (_path.isNotEmpty) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${_path.length})',
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: widget.config.color.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
               ],
+            ),
+          ),
+        ),
+
+        // Mode toggle button
+        Positioned(
+          top: 8,
+          right: 48,
+          child: Material(
+            color: _isMovingMode 
+                ? widget.config.color.withOpacity(0.9)
+                : theme.colorScheme.surface.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(8),
+            elevation: 2,
+            child: InkWell(
+              onTap: _toggleMovingMode,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _isMovingMode ? Icons.timeline : Icons.pin_drop,
+                  size: 18,
+                  color: _isMovingMode 
+                      ? Colors.white 
+                      : theme.colorScheme.onSurface,
+                ),
+              ),
             ),
           ),
         ),
@@ -353,24 +503,67 @@ class _MapPanelState extends ConsumerState<MapPanel> {
           ),
         ),
         
-        // Coordinates display
+        // GPS Info display
         if (_hasReceivedData)
           Positioned(
             bottom: 8,
             left: 8,
+            right: 8,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(6),
+                color: Colors.black.withOpacity(0.75),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                '${_currentPosition.latitude.toStringAsFixed(5)}, ${_currentPosition.longitude.toStringAsFixed(5)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontFamily: 'monospace',
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Coordinates
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${_currentPosition.latitude.toStringAsFixed(5)}, ${_currentPosition.longitude.toStringAsFixed(5)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            // Speed
+                            Icon(Icons.speed, color: Colors.white70, size: 10),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${_speedKmh.toStringAsFixed(1)} km/h',
+                              style: const TextStyle(color: Colors.white70, fontSize: 9),
+                            ),
+                            const SizedBox(width: 8),
+                            // Heading
+                            Icon(Icons.explore, color: Colors.white70, size: 10),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${_course.toStringAsFixed(0)}°',
+                              style: const TextStyle(color: Colors.white70, fontSize: 9),
+                            ),
+                            const SizedBox(width: 8),
+                            // Satellites
+                            Icon(Icons.satellite_alt, color: _hasFix ? Colors.green : Colors.orange, size: 10),
+                            const SizedBox(width: 2),
+                            Text(
+                              '$_satellites',
+                              style: TextStyle(color: _hasFix ? Colors.green : Colors.orange, fontSize: 9),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -470,6 +663,7 @@ class FullscreenMapView extends ConsumerStatefulWidget {
   final LatLng currentPosition;
   final List<LatLng> path;
   final bool hasData;
+  final bool isMovingMode; // Receive from parent
 
   const FullscreenMapView({
     super.key,
@@ -477,6 +671,7 @@ class FullscreenMapView extends ConsumerStatefulWidget {
     required this.currentPosition,
     required this.path,
     required this.hasData,
+    required this.isMovingMode,
   });
 
   @override
@@ -492,9 +687,25 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
   bool _mapReady = false;
   bool _followMode = true;
   
+  // Local moving mode state - dapat di-toggle langsung dari UI
+  late bool _isMovingMode;
+  
+  // LRU Path Management (same as MapPanel)
+  static const int _maxPathPoints = 500;
+  static const double _minDistanceMeters = 5.0;
+  
   // Idle timeout
   Timer? _idleTimer;
   bool _showResetIndicator = false;
+  
+  // GPS Data tambahan
+  double _speedKmh = 0.0;
+  double _course = 0.0;
+  double _altitude = 0.0;
+  int _satellites = 0;
+  double _hdop = 0.0;
+  bool _hasFix = false;
+  String? _timestamp;
 
   @override
   void initState() {
@@ -503,11 +714,12 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
     _currentPosition = widget.currentPosition;
     _path = List.from(widget.path);
     _hasReceivedData = widget.hasData;
-    _followMode = widget.config.isMovingMode;
+    _isMovingMode = widget.isMovingMode; // Initialize from parent
+    _followMode = _isMovingMode;
     _setupMessageListener();
     
     // Start idle timer if we have data
-    if (_hasReceivedData && widget.config.isMovingMode) {
+    if (_hasReceivedData && _isMovingMode) {
       _startIdleTimer();
     }
   }
@@ -528,7 +740,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
   void _startIdleTimer() {
     _idleTimer?.cancel();
     
-    if (!widget.config.isMovingMode) return;
+    if (!_isMovingMode) return;
     if (widget.config.idleTimeoutSeconds <= 0) return;
     
     _idleTimer = Timer(
@@ -539,7 +751,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
 
   void _onIdleTimeout() {
     if (!mounted) return;
-    if (!widget.config.isMovingMode) return;
+    if (!_isMovingMode) return;
     
     setState(() {
       _path.clear();
@@ -572,6 +784,48 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
     });
   }
 
+  // Toggle moving mode dari UI
+  void _toggleMovingMode() {
+    setState(() {
+      _isMovingMode = !_isMovingMode;
+      if (!_isMovingMode) {
+        // Clear path ketika switch ke static mode
+        _path.clear();
+        _idleTimer?.cancel();
+        _followMode = false;
+      } else {
+        // Start idle timer dan follow mode ketika switch ke moving mode
+        _followMode = true;
+        _startIdleTimer();
+      }
+    });
+    
+    // Tampilkan feedback ke user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              _isMovingMode ? Icons.timeline : Icons.pin_drop,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Text(_isMovingMode ? 'Mode Tracking aktif' : 'Mode Statis aktif'),
+          ],
+        ),
+        backgroundColor: _isMovingMode ? widget.config.color : Colors.grey,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // Hitung jarak antara dua koordinat dalam meter
+  double _calculateDistance(LatLng from, LatLng to) {
+    const Distance distance = Distance();
+    return distance.as(LengthUnit.Meter, from, to);
+  }
+
   @override
   void dispose() {
     _messageSub?.close();
@@ -587,27 +841,68 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
       final data = json.decode(payload);
       if (data is Map<String, dynamic> &&
           data.containsKey('lat') &&
-          data.containsKey('lng')) {
+          (data.containsKey('lon') || data.containsKey('lng'))) {
         final latValue = data['lat'];
-        final lngValue = data['lng'];
+        final lonValue = data['lon'] ?? data['lng'];
         
-        if (latValue is! num || lngValue is! num) return;
+        if (latValue is! num || lonValue is! num) return;
         
         final lat = latValue.toDouble();
-        final lng = lngValue.toDouble();
+        final lon = lonValue.toDouble();
         
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return;
         
-        final newPos = LatLng(lat, lng);
+        final newPos = LatLng(lat, lon);
 
         if (mounted) {
           setState(() {
             _currentPosition = newPos;
             _hasReceivedData = true;
             
-            if (widget.config.isMovingMode) {
-              if (_path.isEmpty || _path.last != _currentPosition) {
+            // Parse GPS data tambahan
+            if (data.containsKey('speed_kmh') && data['speed_kmh'] is num) {
+              _speedKmh = (data['speed_kmh'] as num).toDouble();
+            }
+            if (data.containsKey('course') && data['course'] is num) {
+              _course = (data['course'] as num).toDouble();
+            }
+            if (data.containsKey('altitude') && data['altitude'] is num) {
+              _altitude = (data['altitude'] as num).toDouble();
+            }
+            if (data.containsKey('satellites') && data['satellites'] is num) {
+              _satellites = (data['satellites'] as num).toInt();
+            }
+            if (data.containsKey('hdop') && data['hdop'] is num) {
+              _hdop = (data['hdop'] as num).toDouble();
+            }
+            if (data.containsKey('fix')) {
+              _hasFix = data['fix'] == true;
+            }
+            if (data.containsKey('timestamp') && data['timestamp'] is String) {
+              _timestamp = data['timestamp'] as String;
+            }
+            
+            // Update path for moving mode dengan distance threshold dan LRU
+            if (_isMovingMode) {
+              bool shouldAddPoint = false;
+              
+              if (_path.isEmpty) {
+                shouldAddPoint = true;
+              } else {
+                // Hanya tambah point jika jarak >= minimum threshold
+                final distance = _calculateDistance(_path.last, _currentPosition);
+                if (distance >= _minDistanceMeters) {
+                  shouldAddPoint = true;
+                }
+              }
+              
+              if (shouldAddPoint) {
                 _path.add(_currentPosition);
+                
+                // LRU Strategy: hapus point terlama jika melebihi max
+                while (_path.length > _maxPathPoints) {
+                  _path.removeAt(0);
+                }
               }
             }
           });
@@ -652,6 +947,41 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
     }
   }
 
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -661,7 +991,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
         title: Row(
           children: [
             Icon(
-              widget.config.isMovingMode ? Icons.navigation : Icons.location_on,
+              _isMovingMode ? Icons.navigation : Icons.location_on,
               size: 20,
               color: widget.config.color,
             ),
@@ -672,20 +1002,35 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (widget.config.isMovingMode)
+            if (_isMovingMode)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: widget.config.color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(
-                  'LIVE',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: widget.config.color,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'LIVE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: widget.config.color,
+                      ),
+                    ),
+                    if (_path.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${_path.length})',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: widget.config.color.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
           ],
@@ -694,6 +1039,28 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          // Mode toggle button
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: _isMovingMode 
+                  ? widget.config.color.withOpacity(0.2)
+                  : theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: _toggleMovingMode,
+              icon: Icon(
+                _isMovingMode ? Icons.timeline : Icons.pin_drop,
+                color: _isMovingMode 
+                    ? widget.config.color 
+                    : theme.colorScheme.onSurface,
+              ),
+              tooltip: _isMovingMode ? 'Switch to Static' : 'Switch to Tracking',
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -722,7 +1089,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
               ),
               
               // Path polyline
-              if (widget.config.isMovingMode && _path.length > 1)
+              if (_isMovingMode && _path.length > 1)
                 PolylineLayer(
                   polylines: [
                     Polyline(
@@ -733,33 +1100,56 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                   ],
                 ),
               
-              // Marker
+              // Marker dengan rotasi berdasarkan heading
               if (_hasReceivedData)
                 MarkerLayer(
                   markers: [
                     Marker(
                       point: _currentPosition,
-                      width: 50,
-                      height: 50,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: widget.config.color,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          widget.config.isMovingMode 
-                              ? Icons.navigation 
-                              : Icons.location_on,
-                          color: Colors.white,
-                          size: 26,
+                      width: 56,
+                      height: 56,
+                      child: Transform.rotate(
+                        angle: _isMovingMode ? (_course * 3.14159265359 / 180) : 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: widget.config.color,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(
+                                _isMovingMode 
+                                    ? Icons.navigation 
+                                    : Icons.location_on,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                              // Speed indicator ring
+                              if (_isMovingMode && _speedKmh > 0)
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -768,7 +1158,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
             ],
           ),
           
-          // Coordinates display
+          // GPS Info display - Full details
           Positioned(
             top: 16,
             left: 16,
@@ -785,58 +1175,117 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Coordinates',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.disabledColor,
-                          ),
+                  // Coordinates row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Coordinates',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.disabledColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _hasReceivedData 
+                                  ? '${_currentPosition.latitude.toStringAsFixed(6)}, ${_currentPosition.longitude.toStringAsFixed(6)}'
+                                  : 'Waiting for data...',
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _hasReceivedData 
-                              ? '${_currentPosition.latitude.toStringAsFixed(6)}, ${_currentPosition.longitude.toStringAsFixed(6)}'
-                              : 'Waiting for data...',
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.bold,
+                      ),
+                      // Fix status indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _hasFix ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _hasFix ? Icons.gps_fixed : Icons.gps_not_fixed,
+                              size: 14,
+                              color: _hasFix ? Colors.green : Colors.orange,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _hasFix ? 'FIX' : 'NO FIX',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: _hasFix ? Colors.green : Colors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_isMovingMode && _path.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: widget.config.color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${_path.length} pts',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: widget.config.color,
+                            ),
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  if (widget.config.isMovingMode && _path.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: widget.config.color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                  
+                  const SizedBox(height: 10),
+                  
+                  // GPS Stats row
+                  Row(
+                    children: [
+                      // Speed
+                      _buildInfoChip(
+                        icon: Icons.speed,
+                        label: '${_speedKmh.toStringAsFixed(1)} km/h',
+                        color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
                       ),
-                      child: Column(
-                        children: [
-                          Text(
-                            '${_path.length}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: widget.config.color,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            'points',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: widget.config.color,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      // Heading
+                      _buildInfoChip(
+                        icon: Icons.explore,
+                        label: '${_course.toStringAsFixed(0)}°',
+                        color: widget.config.color,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // Altitude
+                      _buildInfoChip(
+                        icon: Icons.terrain,
+                        label: '${_altitude.toStringAsFixed(1)} m',
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      // Satellites
+                      _buildInfoChip(
+                        icon: Icons.satellite_alt,
+                        label: '$_satellites sat',
+                        color: _satellites >= 8 ? Colors.green : (_satellites >= 4 ? Colors.orange : Colors.red),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -884,7 +1333,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
             child: Column(
               children: [
                 // Follow mode indicator
-                if (widget.config.isMovingMode)
+                if (_isMovingMode)
                   Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
