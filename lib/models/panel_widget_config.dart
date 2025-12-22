@@ -36,6 +36,7 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(17) int? maxDataPoints;
   @HiveField(18) bool isMovingMode;
   @HiveField(19) int idleTimeoutSeconds;
+  @HiveField(20) int? mapMarkerIcon;  // Icon number 1-21 untuk Map Tracker
 
   PanelWidgetConfig({
     String? id,
@@ -58,6 +59,7 @@ class PanelWidgetConfig extends HiveObject {
     this.maxDataPoints = 50,
     this.isMovingMode = false,
     this.idleTimeoutSeconds = 10,
+    this.mapMarkerIcon,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -87,6 +89,7 @@ class PanelWidgetConfig extends HiveObject {
     int? maxDataPoints,
     bool? isMovingMode,
     int? idleTimeoutSeconds,
+    int? mapMarkerIcon,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -109,6 +112,7 @@ class PanelWidgetConfig extends HiveObject {
       maxDataPoints: maxDataPoints ?? this.maxDataPoints,
       isMovingMode: isMovingMode ?? this.isMovingMode,
       idleTimeoutSeconds: idleTimeoutSeconds ?? this.idleTimeoutSeconds,
+      mapMarkerIcon: mapMarkerIcon ?? this.mapMarkerIcon,
     );
   }
 }

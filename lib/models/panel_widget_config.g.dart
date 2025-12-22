@@ -37,13 +37,14 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       maxDataPoints: fields[17] as int?,
       isMovingMode: fields[18] as bool,
       idleTimeoutSeconds: fields[19] as int,
+      mapMarkerIcon: fields[20] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, PanelWidgetConfig obj) {
     writer
-      ..writeByte(20)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -83,7 +84,9 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       ..writeByte(18)
       ..write(obj.isMovingMode)
       ..writeByte(19)
-      ..write(obj.idleTimeoutSeconds);
+      ..write(obj.idleTimeoutSeconds)
+      ..writeByte(20)
+      ..write(obj.mapMarkerIcon);
   }
 
   @override

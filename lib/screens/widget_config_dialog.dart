@@ -27,6 +27,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   Color _selectedColor = Colors.blue;
   int? _selectedIconCodePoint;
   bool _colorInitializedFromTheme = false;
+  int? _mapMarkerIcon;  // 1-21 untuk icon pack Map Tracker
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _qos = widget.initialConfig!.qos;
       _selectedColor = widget.initialConfig!.color;
       _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
+      _mapMarkerIcon = widget.initialConfig!.mapMarkerIcon;
     }
   }
 
@@ -242,7 +244,86 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  // Map settings removed - Moving mode can be toggled directly from the map panel
+                  // Map Marker Icon picker
+                  if (_selectedType == WidgetType.map) ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Marker Icon (Mode Tracking):'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Pilih icon yang akan ditampilkan saat mode realtime',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).disabledColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 80,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: 21,
+                            itemBuilder: (context, index) {
+                              final iconNumber = index + 1;
+                              final isSelected = _mapMarkerIcon == iconNumber;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _mapMarkerIcon = isSelected ? null : iconNumber;
+                                  });
+                                },
+                                child: Container(
+                                  width: 64,
+                                  height: 64,
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelected 
+                                        ? _selectedColor.withOpacity(0.2) 
+                                        : Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected ? _selectedColor : Colors.grey.withOpacity(0.3),
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.asset(
+                                      'assets/icon/$iconNumber.png',
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Center(
+                                          child: Text(
+                                            '$iconNumber',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: isSelected ? _selectedColor : Colors.grey,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (_mapMarkerIcon != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Icon $_mapMarkerIcon dipilih',
+                              style: TextStyle(
+                                color: _selectedColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   DropdownButtonFormField<int>(
                     value: _qos,
                     decoration: const InputDecoration(
@@ -465,6 +546,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         unit: _unitController.text.isEmpty ? null : _unitController.text,
         isMovingMode: false, // Default: static mode, can be toggled from panel
         idleTimeoutSeconds: 10, // Default timeout
+        mapMarkerIcon: _mapMarkerIcon,
       );
 
       Navigator.pop(context, config);

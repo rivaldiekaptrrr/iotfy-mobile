@@ -195,6 +195,112 @@ class _MapPanelState extends ConsumerState<MapPanel> {
     return distance.as(LengthUnit.Meter, from, to);
   }
 
+  // Build marker widget - menggunakan icon PNG custom atau default icon
+  Widget _buildMarkerWidget() {
+    final bool useCustomIcon = (_isMovingMode || _isPlayingHistory) && 
+                                widget.config.mapMarkerIcon != null;
+    
+    // Jika menggunakan custom icon PNG
+    if (useCustomIcon) {
+      return Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipOval(
+              child: Image.asset(
+                'assets/icon/${widget.config.mapMarkerIcon}.png',
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback ke default icon jika gagal load
+                  debugPrint('Error loading asset assets/icon/${widget.config.mapMarkerIcon}.png: $error');
+                  return _buildDefaultMarkerIcon();
+                },
+              ),
+            ),
+            // Speed indicator ring
+            if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+    
+    // Default marker icon (untuk mode statis atau tanpa custom icon)
+    return _buildDefaultMarkerIcon();
+  }
+  
+  Widget _buildDefaultMarkerIcon() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _isPlayingHistory 
+            ? Colors.orange 
+            : widget.config.color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white, 
+          width: _isPlayingHistory ? 4 : 3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            _isMovingMode || _isPlayingHistory
+                ? Icons.two_wheeler
+                : Icons.location_on,
+            color: Colors.white,
+            size: 28,
+          ),
+          // Speed indicator ring
+          if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   void didUpdateWidget(MapPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -409,56 +515,11 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                   markers: [
                     Marker(
                       point: _isPlayingHistory ? _playbackPosition : _currentPosition,
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       child: Transform.rotate(
                         angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: _isPlayingHistory 
-                                ? Colors.orange  // Warna berbeda saat playback
-                                : widget.config.color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white, 
-                              width: _isPlayingHistory ? 4 : 3,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                _isMovingMode || _isPlayingHistory
-                                    ? Icons.two_wheeler  // Ikon motor 🏍️
-                                    : Icons.location_on,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                              // Speed indicator ring jika bergerak
-                              if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 1.5),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
+                        child: _buildMarkerWidget(),
                       ),
                     ),
                   ],
@@ -1039,6 +1100,107 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
     return _historyPath[_playbackIndex];
   }
 
+  // Build marker widget - menggunakan icon PNG custom atau default icon
+  Widget _buildMarkerWidget() {
+    final bool useCustomIcon = (_isMovingMode || _isPlayingHistory) && 
+                                widget.config.mapMarkerIcon != null;
+    
+    if (useCustomIcon) {
+      return Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipOval(
+              child: Image.asset(
+                'assets/icon/${widget.config.mapMarkerIcon}.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint('Error loading asset assets/icon/${widget.config.mapMarkerIcon}.png: $error');
+                  return _buildDefaultMarkerIcon();
+                },
+              ),
+            ),
+            if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+    
+    return _buildDefaultMarkerIcon();
+  }
+  
+  Widget _buildDefaultMarkerIcon() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _isPlayingHistory 
+            ? Colors.orange 
+            : widget.config.color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white, 
+          width: _isPlayingHistory ? 5 : 4,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            _isMovingMode || _isPlayingHistory
+                ? Icons.two_wheeler
+                : Icons.location_on,
+            color: Colors.white,
+            size: 30,
+          ),
+          if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _messageSub?.close();
@@ -1378,56 +1540,11 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                   markers: [
                     Marker(
                       point: _isPlayingHistory ? _playbackPosition : _currentPosition,
-                      width: 60,
-                      height: 60,
+                      width: 64,
+                      height: 64,
                       child: Transform.rotate(
                         angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: _isPlayingHistory 
-                                ? Colors.orange 
-                                : widget.config.color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white, 
-                              width: _isPlayingHistory ? 5 : 4,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                _isMovingMode || _isPlayingHistory
-                                    ? Icons.two_wheeler  // Ikon motor 🏍️
-                                    : Icons.location_on,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                              // Speed indicator ring
-                              if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
+                        child: _buildMarkerWidget(),
                       ),
                     ),
                   ],
