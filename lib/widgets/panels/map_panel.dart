@@ -202,49 +202,16 @@ class _MapPanelState extends ConsumerState<MapPanel> {
     
     // Jika menggunakan custom icon PNG
     if (useCustomIcon) {
-      return Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/icon/${widget.config.mapMarkerIcon}.png',
-                width: 56,
-                height: 56,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback ke default icon jika gagal load
-                  debugPrint('Error loading asset assets/icon/${widget.config.mapMarkerIcon}.png: $error');
-                  return _buildDefaultMarkerIcon();
-                },
-              ),
-            ),
-            // Speed indicator ring
-            if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-          ],
-        ),
+      // Tampilkan gambar apa adanya tanpa background/shadow kotak
+      return Image.asset(
+        'assets/icon/${widget.config.mapMarkerIcon}.png',
+        width: 56,
+        height: 56,
+        fit: BoxFit.contain, // Gunakan contain agar gambar utuh tidak terpotong
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Error loading asset assets/icon/${widget.config.mapMarkerIcon}.png: $error');
+          return _buildDefaultMarkerIcon();
+        },
       );
     }
     
@@ -1106,47 +1073,15 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                                 widget.config.mapMarkerIcon != null;
     
     if (useCustomIcon) {
-      return Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/icon/${widget.config.mapMarkerIcon}.png',
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Error loading asset assets/icon/${widget.config.mapMarkerIcon}.png: $error');
-                  return _buildDefaultMarkerIcon();
-                },
-              ),
-            ),
-            if (_isMovingMode && _speedKmh > 0 && !_isPlayingHistory)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-          ],
-        ),
+      return Image.asset(
+        'assets/icon/${widget.config.mapMarkerIcon}.png',
+        width: 60,
+        height: 60,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Error loading asset assets/icon/${widget.config.mapMarkerIcon}.png: $error');
+          return _buildDefaultMarkerIcon();
+        },
       );
     }
     
