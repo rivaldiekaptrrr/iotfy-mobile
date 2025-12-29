@@ -338,7 +338,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final newConfig = config.copyWith(
           x: 0, 
           y: maxY,
-          // Default width/height if not set? Config dialog likely sets them or defaults are 1,1
+          // Set sensible defaults based on grid granularity (approx 24 cols desktop / 8 mobile)
+          width: switch (config.type) {
+            WidgetType.toggle || WidgetType.button || WidgetType.text => 4,
+            WidgetType.gauge => 6,
+            WidgetType.lineChart || WidgetType.map => 8,
+          },
+          height: switch (config.type) {
+             WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
+             WidgetType.gauge => 5,
+             WidgetType.lineChart || WidgetType.map => 6,
+          },
         );
 
         final updated = dashboard.copyWith(widgets: [...dashboard.widgets, newConfig]);

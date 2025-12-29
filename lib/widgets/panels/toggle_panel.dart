@@ -63,64 +63,85 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
     // No Card wrapper - handled by PanelContainer
     final icon = IconHelper.getIcon(widget.config.iconCodePoint);
     
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 140),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null)
-              Icon(
-                icon,
-                size: 32,
-                color: _isOn ? widget.config.color : scheme.onSurfaceVariant,
-              ),
-            if (icon != null) const SizedBox(height: 8),
-            Text(
-              widget.config.title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate responsive sizes based on available space
+        final minDimension = constraints.maxWidth < constraints.maxHeight 
+            ? constraints.maxWidth 
+            : constraints.maxHeight;
+        
+        // Icon size scales with widget size
+        final iconSize = (minDimension * 0.25).clamp(32.0, 100.0);
+        // Title font size scales - LARGER to fill card
+        final titleSize = (minDimension * 0.15).clamp(14.0, 48.0);
+        // Switch scale factor - LARGER to fill card
+        final switchScale = (minDimension / 80).clamp(1.0, 4.0);
+        
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.all(minDimension * 0.05),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null)
+                  Icon(
+                    icon,
+                    size: iconSize,
+                    color: _isOn ? widget.config.color : scheme.onSurfaceVariant,
+                  ),
+                if (icon != null) SizedBox(height: minDimension * 0.04),
+                Text(
+                  widget.config.title,
+                  style: TextStyle(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: minDimension * 0.06),
+                if (_isLoading)
+                  SizedBox(
+                    width: 24 * switchScale,
+                    height: 24 * switchScale,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Transform.scale(
+                    scale: switchScale,
+                    child: Switch(
+                      value: _isOn,
+                      onChanged: (value) {
+                        if (!isConnected) {
+                          _showConnectionWarning(context, lastError);
+                          return;
+                        }
+                        _toggleSwitch(value);
+                      },
+                      activeColor: widget.config.color,
+                      trackOutlineColor: WidgetStatePropertyAll(scheme.outlineVariant),
+                    ),
+                  ),
+                SizedBox(height: minDimension * 0.03),
+                if (!isConnected)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (isError ? Colors.red : Colors.grey).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isError ? 'Error' : 'Offline',
+                      style: TextStyle(color: isError ? Colors.red : Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 16),
-            if (_isLoading)
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Switch(
-                value: _isOn,
-                onChanged: (value) {
-                  if (!isConnected) {
-                    _showConnectionWarning(context, lastError);
-                    return;
-                  }
-                  _toggleSwitch(value);
-                },
-                activeColor: widget.config.color,
-                trackOutlineColor: WidgetStatePropertyAll(scheme.outlineVariant),
-              ),
-            const SizedBox(height: 8),
-            if (!isConnected)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (isError ? Colors.red : Colors.grey).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  isError ? 'Error' : 'Offline',
-                  style: TextStyle(color: isError ? Colors.red : Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
-                ),
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
