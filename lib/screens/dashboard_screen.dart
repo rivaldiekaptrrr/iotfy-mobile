@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:reorderables/reorderables.dart';
+
 import '../models/panel_widget_config.dart';
 import '../models/dashboard_config.dart';
 import '../models/broker_config.dart';
@@ -16,6 +16,7 @@ import '../widgets/panels/line_chart_panel.dart';
 import '../widgets/panels/map_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
+import '../widgets/dashboard_grid_layout.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -78,9 +79,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 _buildHeader(context, dashboard, broker, isConnected, isConnecting, isError, lastError),
                 if (_isEditMode) _buildEditModeBanner(),
                 Expanded(
-                  child: _isEditMode
-                      ? _buildEditableWrap(context, dashboard.widgets)
-                      : _buildReadonlyWrap(context, dashboard.widgets),
+                  child: DashboardGridLayout(
+                    widgets: dashboard.widgets,
+                    isEditMode: _isEditMode,
+                    childBuilder: _buildWidget,
+                    onWidgetUpdate: _updateWidgetConfig, // For drag/resize
+                    onWidgetEdit: _editWidget,
+                    onWidgetDelete: _deleteWidget, // Passing ID logic inside Wrapper or change signature
+                  ),
                 ),
               ],
             ),
@@ -262,7 +268,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Drag to reorder widgets. Use actions on widgets to resize or delete.',
+              'Drag to move widgets. Drag corners to resize.',
               style: TextStyle(
                 fontSize: 13, 
                 fontWeight: FontWeight.w500,
@@ -277,7 +283,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildWidget(PanelWidgetConfig config) {
     Widget panel;
-    // Remove Card Check - widgets handled internally now
     switch (config.type) {
       case WidgetType.toggle:
         panel = TogglePanel(config: config);
@@ -306,86 +311,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     return PanelContainer(
-      key: ValueKey(config.id),
       config: config,
       isEditMode: _isEditMode,
       onEdit: () => _editWidget(config),
       onDelete: () => _deleteWidget(config.id),
-      onResize: (span) => _updateWidgetSpan(config, span),
       child: panel,
     );
   }
 
-  Widget _buildReadonlyWrap(BuildContext context, List<PanelWidgetConfig> widgets) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth - (_gridPadding * 2);
-        final columnWidth = (availableWidth - _gridSpacing) / 2;
-
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(_gridPadding),
-          physics: const BouncingScrollPhysics(),
-          child: Wrap(
-            spacing: _gridSpacing,
-            runSpacing: _gridSpacing,
-            children: widgets.map((config) {
-              final span = config.width.clamp(1, 2).toInt();
-              final width = span == 2 ? availableWidth : columnWidth;
-              // Determine minHeight based on widget type
-              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart || config.type == WidgetType.map) ? 200.0 : 160.0;
-              return SizedBox(
-                width: width,
-                height: minHeight,
-                child: _buildWidget(config),
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEditableWrap(BuildContext context, List<PanelWidgetConfig> widgets) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth - (_gridPadding * 2);
-        final columnWidth = (availableWidth - _gridSpacing) / 2;
-
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(_gridPadding),
-          physics: const BouncingScrollPhysics(),
-          child: ReorderableWrap(
-            spacing: _gridSpacing,
-            runSpacing: _gridSpacing,
-            needsLongPressDraggable: true, // Requires long press to drag - more stable on mobile
-            buildDraggableFeedback: (context, constraints, child) {
-              return Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(20),
-                child: ConstrainedBox(
-                  constraints: constraints,
-                  child: child,
-                ),
-              );
-            },
-            children: widgets.map((config) {
-              final span = config.width.clamp(1, 2).toInt();
-              final width = span == 2 ? availableWidth : columnWidth;
-              // Determine minHeight based on widget type
-              final minHeight = (config.type == WidgetType.gauge || config.type == WidgetType.lineChart || config.type == WidgetType.map) ? 200.0 : 160.0;
-              return SizedBox(
-                key: ValueKey(config.id),
-                width: width,
-                height: minHeight,
-                child: _buildWidget(config),
-              );
-            }).toList(),
-            onReorder: (oldIndex, newIndex) => _reorderWidget(oldIndex, newIndex),
-          ),
-        );
-      },
-    );
-  }
+  /* Widget Wraps Removed */
 
   Future<void> _addWidget() async {
     final config = await showDialog<PanelWidgetConfig>(
@@ -395,7 +329,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (config != null) {
       final dashboard = ref.read(currentDashboardProvider);
       if (dashboard != null) {
-        final updated = dashboard.copyWith(widgets: [...dashboard.widgets, config]);
+        // Find a free spot (simple stack approach for now: put at bottom)
+        double maxY = 0;
+        for (var w in dashboard.widgets) {
+          if ((w.y + w.height) > maxY) maxY = w.y + w.height;
+        }
+        
+        final newConfig = config.copyWith(
+          x: 0, 
+          y: maxY,
+          // Default width/height if not set? Config dialog likely sets them or defaults are 1,1
+        );
+
+        final updated = dashboard.copyWith(widgets: [...dashboard.widgets, newConfig]);
         ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
       }
     }
@@ -416,7 +362,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  void _deleteWidget(String id) {
+  void _deleteWidget(String id) { // Changed signature to String for DashboardGridLayout compatibility if needed, but it was already String
     final dashboard = ref.read(currentDashboardProvider);
     if (dashboard != null) {
       final newWidgets = dashboard.widgets.where((w) => w.id != id).toList();
@@ -425,27 +371,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  void _updateWidgetSpan(PanelWidgetConfig config, int span) {
+  // Called by DashboardGridLayout when x/y/w/h changes
+  void _updateWidgetConfig(PanelWidgetConfig updatedConfig) {
     final dashboard = ref.read(currentDashboardProvider);
     if (dashboard == null) return;
-    final clampedSpan = span.clamp(1, 2).toDouble();
+    
     final newWidgets = dashboard.widgets
-        .map((w) => w.id == config.id ? w.copyWith(width: clampedSpan) : w)
+        .map((w) => w.id == updatedConfig.id ? updatedConfig : w)
         .toList();
     final updated = dashboard.copyWith(widgets: newWidgets);
-    ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
-  }
-
-  void _reorderWidget(int oldIndex, int newIndex) {
-    final dashboard = ref.read(currentDashboardProvider);
-    if (dashboard == null) return;
-
-    final List<PanelWidgetConfig> widgets = List.from(dashboard.widgets);
-    final moved = widgets.removeAt(oldIndex);
-    if (newIndex > oldIndex) newIndex--;
-    widgets.insert(newIndex, moved);
-
-    final updated = dashboard.copyWith(widgets: widgets);
+    
+    // We update the state immediately
+    // Note: this triggers rebuilds on every drag frame if we are not careful.
+    // DashboardGridLayout is throttled or local state based? 
+    // It calls this onPanUpdate. That might be heavy. 
+    // Ideally we optimize, but for now let's see. 
     ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
   }
 
@@ -542,6 +482,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+
   Widget _buildHeader(
     BuildContext context,
     DashboardConfig dashboard,
@@ -618,7 +559,6 @@ class PanelContainer extends StatelessWidget {
   final bool isEditMode;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final Function(int) onResize;
 
   const PanelContainer({
     super.key,
@@ -627,7 +567,6 @@ class PanelContainer extends StatelessWidget {
     required this.isEditMode,
     required this.onEdit,
     required this.onDelete,
-    required this.onResize,
   });
 
   @override
@@ -689,32 +628,8 @@ class PanelContainer extends StatelessWidget {
             )
           ),
 
-        if (isEditMode)
-           Positioned(
-            bottom: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                 color: Colors.black87,
-                 borderRadius: BorderRadius.circular(12),
-              ),
-               child: Row(
-                 mainAxisSize: MainAxisSize.min,
-                 children: [
-                   GestureDetector(
-                     onTap: () => onResize(1),
-                     child: Icon(Icons.crop_portrait_sharp, size: 16, color: config.width < 1.5 ? Colors.blueAccent : Colors.white),
-                   ),
-                   const SizedBox(width: 8),
-                   GestureDetector(
-                     onTap: () => onResize(2),
-                     child: Icon(Icons.crop_landscape_sharp, size: 16, color: config.width >= 1.5 ? Colors.blueAccent : Colors.white),
-                   ),
-                 ],
-               ),
-            ),
-           ),
+        if (isEditMode) /* Resize handle is now outside PanelContainer in DashboardGridLayout */
+           Container(),
       ],
     );
   }

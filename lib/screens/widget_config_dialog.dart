@@ -547,6 +547,10 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         isMovingMode: false, // Default: static mode, can be toggled from panel
         idleTimeoutSeconds: 10, // Default timeout
         mapMarkerIcon: _mapMarkerIcon,
+        x: widget.initialConfig?.x ?? 0,
+        y: widget.initialConfig?.y ?? 0,
+        width: widget.initialConfig?.width ?? 1,
+        height: widget.initialConfig?.height ?? 1,
       );
 
       Navigator.pop(context, config);
