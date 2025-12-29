@@ -119,6 +119,8 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         return WidgetType.text;
       case 5:
         return WidgetType.map;
+      case 6:
+        return WidgetType.slider;
       default:
         return WidgetType.toggle;
     }
@@ -144,6 +146,9 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         break;
       case WidgetType.map:
         writer.writeByte(5);
+        break;
+      case WidgetType.slider:
+        writer.writeByte(6);
         break;
     }
   }

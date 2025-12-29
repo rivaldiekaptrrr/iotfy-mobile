@@ -14,6 +14,7 @@ import '../widgets/panels/button_panel.dart';
 import '../widgets/panels/gauge_panel.dart';
 import '../widgets/panels/line_chart_panel.dart';
 import '../widgets/panels/map_panel.dart';
+import '../widgets/panels/slider_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
 import '../widgets/dashboard_grid_layout.dart';
@@ -308,6 +309,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       case WidgetType.map:
         panel = MapPanel(config: config);
         break;
+      case WidgetType.slider:
+        panel = SliderPanel(config: config);
+        break;
     }
 
     return PanelContainer(
@@ -338,16 +342,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final newConfig = config.copyWith(
           x: 0, 
           y: maxY,
-          // Set sensible defaults based on grid granularity (approx 24 cols desktop / 8 mobile)
           width: switch (config.type) {
             WidgetType.toggle || WidgetType.button || WidgetType.text => 4,
             WidgetType.gauge => 6,
             WidgetType.lineChart || WidgetType.map => 8,
+            WidgetType.slider => 6,
           },
           height: switch (config.type) {
              WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
              WidgetType.gauge => 5,
              WidgetType.lineChart || WidgetType.map => 6,
+             WidgetType.slider => 3,
           },
         );
 

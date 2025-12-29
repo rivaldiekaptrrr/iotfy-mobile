@@ -12,6 +12,7 @@ enum WidgetType {
   @HiveField(3) lineChart,
   @HiveField(4) text,
   @HiveField(5) map,
+  @HiveField(6) slider,
 }
 
 @HiveType(typeId: 3)

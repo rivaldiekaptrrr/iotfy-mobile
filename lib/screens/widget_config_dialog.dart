@@ -207,7 +207,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart) ...[
+                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider) ...[
                     Row(
                       children: [
                         Expanded(
@@ -417,11 +417,14 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     return _selectedType == WidgetType.toggle ||
         _selectedType == WidgetType.gauge ||
         _selectedType == WidgetType.lineChart ||
-        _selectedType == WidgetType.map;
+        _selectedType == WidgetType.map ||
+        _selectedType == WidgetType.slider;
   }
 
   bool _needsPublishTopic() {
-    return _selectedType == WidgetType.toggle || _selectedType == WidgetType.button;
+    return _selectedType == WidgetType.toggle || 
+           _selectedType == WidgetType.button ||
+           _selectedType == WidgetType.slider;
   }
 
   String _getWidgetTypeName(WidgetType type) {
@@ -438,6 +441,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Text Display';
       case WidgetType.map:
         return 'Map Tracker';
+      case WidgetType.slider:
+        return 'Slider Control';
     }
   }
 
