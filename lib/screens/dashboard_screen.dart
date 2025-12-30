@@ -445,61 +445,63 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                Expanded(
                 child: Consumer(
                   builder: (context, ref, _) {
-                    final logs = ref.watch(mqttLogsProvider);
-                    return logs.when(
-                      data: (entries) => entries.isEmpty
-                          ? const Center(child: Text('No logs recorded', style: TextStyle(color: Colors.grey)))
-                          : ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: entries.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 8),
-                              itemBuilder: (context, index) {
-                                final entry = entries[entries.length - 1 - index];
-                                final color = switch (entry.level) {
-                                  MqttLogLevel.info => Colors.blue,
-                                  MqttLogLevel.warn => Colors.orange,
-                                  MqttLogLevel.error => Colors.red,
-                                };
-                                return Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).cardColor,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Theme.of(context).dividerColor),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: color.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              entry.level.name.toUpperCase(),
-                                              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
-                                            ),
+                    // Direct access to log buffer - instant, no stream waiting!
+                    final mqttService = ref.watch(mqttServiceProvider);
+                    final entries = mqttService.logBuffer;
+                    
+                    // Listen to stream for rebuild trigger only
+                    ref.listen(mqttLogsProvider, (_, __) {});
+                    
+                    return entries.isEmpty
+                        ? const Center(child: Text('No logs recorded', style: TextStyle(color: Colors.grey)))
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: entries.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final entry = entries[entries.length - 1 - index];
+                              final color = switch (entry.level) {
+                                MqttLogLevel.info => Colors.blue,
+                                MqttLogLevel.warn => Colors.orange,
+                                MqttLogLevel.error => Colors.red,
+                              };
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Theme.of(context).dividerColor),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(4),
                                           ),
-                                          const Spacer(),
-                                          Text(
-                                            entry.time.toLocal().toIso8601String().substring(11, 19),
-                                            style: TextStyle(fontSize: 10, color: Theme.of(context).disabledColor),
+                                          child: Text(
+                                            entry.level.name.toUpperCase(),
+                                            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(entry.message, style: const TextStyle(fontSize: 13)),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (_, __) => const Center(child: Text('Failed to load logs')),
-                    );
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          entry.time.toLocal().toIso8601String().substring(11, 19),
+                                          style: TextStyle(fontSize: 10, color: Theme.of(context).disabledColor),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(entry.message, style: const TextStyle(fontSize: 13)),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
                   },
                 ),
               ),

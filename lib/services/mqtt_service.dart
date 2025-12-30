@@ -43,6 +43,9 @@ class MqttService {
   String? get lastError => _lastError;
   final List<MqttLogEntry> _logBuffer = [];
   static const int _maxLogEntries = 100;
+  
+  // Direct access to log buffer (no stream waiting)
+  List<MqttLogEntry> get logBuffer => List.unmodifiable(_logBuffer);
 
   void _updateStatus(ConnectionStatus status, [String? error]) {
     _status = status;
