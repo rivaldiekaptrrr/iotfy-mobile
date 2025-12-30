@@ -101,19 +101,16 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
   }
 
   Widget _buildWidgetPositioned(PanelWidgetConfig config, double cellWidth, double cellHeight, double maxWidth) {
-    // Current layout values (snap to grid)
-    double top = config.y * (cellHeight + gridSpacing);
-    double left = config.x * (cellWidth + gridSpacing);
-    double width = config.width * cellWidth + ((config.width - 1) * gridSpacing);
-    double height = config.height * cellHeight + ((config.height - 1) * gridSpacing);
+    // If this widget is currently being dragged/resized, use the local temporary config
+    final displayConfig = (_activeWidgetId == config.id && _activeConfig != null) 
+        ? _activeConfig! 
+        : config;
 
-    // Override if this is the active widget being manipulated
-    /* 
-       Optimally, we update the config state in real-time or use local state.
-       Here we use the config passed in. 
-       If we want smooth dragging, we might need local overrides.
-       For now, let's implement the drag logic triggers. 
-    */
+    // Current layout values (snap to grid or smooth position)
+    double top = displayConfig.y * (cellHeight + gridSpacing);
+    double left = displayConfig.x * (cellWidth + gridSpacing);
+    double width = displayConfig.width * cellWidth + ((displayConfig.width - 1) * gridSpacing);
+    double height = displayConfig.height * cellHeight + ((displayConfig.height - 1) * gridSpacing);
 
     return Positioned(
       top: top,
@@ -122,12 +119,15 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
       height: height,
       child: GestureDetector(
         onPanStart: widget.isEditMode ? (details) => _onPanStart(details, config) : null,
-        onPanUpdate: widget.isEditMode ? (details) => _onPanUpdate(details, config, cellWidth, cellHeight, maxWidth) : null,
-        onPanEnd: widget.isEditMode ? (details) => _onPanEnd(details, config) : null,
+        onPanUpdate: widget.isEditMode ? (details) => _onPanUpdate(details, cellWidth, cellHeight) : null,
+        onPanEnd: widget.isEditMode ? (details) => _onPanEnd(details) : null,
         child: Stack(
           children: [
-            widget.childBuilder(config),
+            widget.childBuilder(config), // Keep inner content static, don't rebuild it constantly? Or pass displayConfig if content changes? Usually static is fine.
             if (widget.isEditMode) _buildResizeHandles(config, cellWidth, cellHeight),
+            // Overlay to block inner interactions while dragging
+            if (widget.isEditMode && _activeWidgetId == config.id)
+               Container(color: Colors.transparent), 
           ],
         ),
       ),
@@ -140,8 +140,8 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
       bottom: 0,
       child: GestureDetector(
         onPanStart: (details) => _onResizeStart(details, config),
-        onPanUpdate: (details) => _onResizeUpdate(details, config, cellWidth, cellHeight),
-        onPanEnd: (details) => _onResizeEnd(details, config),
+        onPanUpdate: (details) => _onResizeUpdate(details, cellWidth, cellHeight),
+        onPanEnd: (details) => _onResizeEnd(details),
         child: Container(
           width: 30,
           height: 30,
@@ -158,45 +158,44 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
   void _onPanStart(DragStartDetails details, PanelWidgetConfig config) {
     setState(() {
       _activeWidgetId = config.id;
-      _activeConfig = config;
+      _activeConfig = config; // Clone start config
       _isResizing = false;
     });
   }
 
-  void _onPanUpdate(DragUpdateDetails details, PanelWidgetConfig config, double cellWidth, double cellHeight, double maxWidth) {
-     if (_activeWidgetId != config.id) return;
+  void _onPanUpdate(DragUpdateDetails details, double cellWidth, double cellHeight) {
+     if (_activeConfig == null) return;
      
      // Calculate delta in grid units
      double dx = details.delta.dx / (cellWidth + gridSpacing);
      double dy = details.delta.dy / (cellHeight + gridSpacing);
 
-     double newX = config.x + dx;
-     double newY = config.y + dy;
+     double newX = _activeConfig!.x + dx;
+     double newY = _activeConfig!.y + dy;
 
-     // Clamp to bounds
      if (newX < 0) newX = 0;
      if (newY < 0) newY = 0;
 
-     // Update visual immediately? 
-     // We can just call onWidgetUpdate which updates the Provider.
-     // But that might trigger full rebuilds. Ideally we use local state for smooth drag.
-     // But for simplicity/correctness first:
-     
-     widget.onWidgetUpdate(config.copyWith(
-       x: newX,
-       y: newY,
-     ));
+     // Update LOCAL state only
+     setState(() {
+       _activeConfig = _activeConfig!.copyWith(x: newX, y: newY);
+     });
   }
 
-  void _onPanEnd(DragEndDetails details, PanelWidgetConfig config) {
+  void _onPanEnd(DragEndDetails details) {
+    if (_activeConfig == null) return;
+
     // Snap to nearest integer
-    double snappedX = config.x.roundToDouble();
-    double snappedY = config.y.roundToDouble();
+    double snappedX = _activeConfig!.x.roundToDouble();
+    double snappedY = _activeConfig!.y.roundToDouble();
     
-    widget.onWidgetUpdate(config.copyWith(
+    final finalConfig = _activeConfig!.copyWith(
       x: snappedX,
       y: snappedY,
-    ));
+    );
+
+    // Commit to parent/DB
+    widget.onWidgetUpdate(finalConfig);
     
     setState(() {
       _activeWidgetId = null;
@@ -207,7 +206,6 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
   // --- Resize Logic ---
 
   void _onResizeStart(DragStartDetails details, PanelWidgetConfig config) {
-     // Stop propagation to drag
      setState(() {
       _activeWidgetId = config.id;
       _activeConfig = config;
@@ -215,32 +213,37 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
      });
   }
 
-  void _onResizeUpdate(DragUpdateDetails details, PanelWidgetConfig config, double cellWidth, double cellHeight) {
+  void _onResizeUpdate(DragUpdateDetails details, double cellWidth, double cellHeight) {
+     if (_activeConfig == null) return;
+
      double dx = details.delta.dx / (cellWidth + gridSpacing);
      double dy = details.delta.dy / (cellHeight + gridSpacing);
 
-     double newW = config.width + dx;
-     double newH = config.height + dy;
+     double newW = _activeConfig!.width + dx;
+     double newH = _activeConfig!.height + dy;
 
      if (newW < 1) newW = 1;
      if (newH < 1) newH = 1;
 
-     widget.onWidgetUpdate(config.copyWith(
-       width: newW,
-       height: newH,
-     ));
+     setState(() {
+       _activeConfig = _activeConfig!.copyWith(width: newW, height: newH);
+     });
   }
 
-  void _onResizeEnd(DragEndDetails details, PanelWidgetConfig config) {
-     double snappedW = config.width.roundToDouble();
-     double snappedH = config.height.roundToDouble();
+  void _onResizeEnd(DragEndDetails details) {
+     if (_activeConfig == null) return;
+
+     double snappedW = _activeConfig!.width.roundToDouble();
+     double snappedH = _activeConfig!.height.roundToDouble();
      if (snappedW < 1) snappedW = 1;
      if (snappedH < 1) snappedH = 1;
 
-     widget.onWidgetUpdate(config.copyWith(
+     final finalConfig = _activeConfig!.copyWith(
        width: snappedW,
        height: snappedH,
-     ));
+     );
+
+     widget.onWidgetUpdate(finalConfig);
 
      setState(() {
       _activeWidgetId = null;
