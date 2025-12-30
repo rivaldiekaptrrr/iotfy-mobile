@@ -17,7 +17,9 @@ import '../widgets/panels/map_panel.dart';
 import '../widgets/panels/slider_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
+import 'rule_manager_screen.dart';
 import '../widgets/dashboard_grid_layout.dart';
+import '../services/rule_evaluator_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -44,6 +46,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final isError = status == ConnectionStatus.error;
     final lastError = ref.watch(mqttServiceProvider).lastError;
 
+    // Initialize rule evaluator service
+    ref.watch(ruleEvaluatorProvider);
+
     if (dashboard == null) {
       return _buildEmptyState(context);
     }
@@ -62,6 +67,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             icon: Icon(_isEditMode ? Icons.check_circle : Icons.edit_outlined),
             color: _isEditMode ? Theme.of(context).colorScheme.primary : null,
             onPressed: () => setState(() => _isEditMode = !_isEditMode),
+          ),
+          IconButton(
+            tooltip: 'Rule Engine',
+            icon: const Icon(Icons.rule),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RuleManagerScreen()),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),

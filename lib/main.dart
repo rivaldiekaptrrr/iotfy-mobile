@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'models/broker_config.dart';
 import 'models/dashboard_config.dart';
 import 'models/panel_widget_config.dart';
+import 'models/rule_config.dart';
 import 'providers/storage_providers.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/broker_list_screen.dart';
@@ -20,6 +21,13 @@ void main() async {
   Hive.registerAdapter(DashboardConfigAdapter());
   Hive.registerAdapter(PanelWidgetConfigAdapter());
   Hive.registerAdapter(WidgetTypeAdapter());
+  Hive.registerAdapter(RuleConfigAdapter());
+  Hive.registerAdapter(RuleOperatorAdapter());
+  Hive.registerAdapter(RuleActionTypeAdapter());
+  Hive.registerAdapter(RuleActionAdapter());
+
+  // Open boxes
+  await Hive.openBox<RuleConfig>('rule_configs');
 
   runApp(
     const ProviderScope(
