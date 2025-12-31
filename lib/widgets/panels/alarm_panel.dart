@@ -53,18 +53,6 @@ class AlarmPanel extends ConsumerWidget {
                 const Spacer(),
                 // Show buttons if there's any alarm (active or cleared)
                 if (allAlarms.isNotEmpty) ...[
-                  // Reset button only shows when there are active alarms
-                  if (displayAlarms.isNotEmpty)
-                    IconButton(
-                      onPressed: () => _showResetConfirmation(context, ref),
-                      icon: Icon(Icons.delete_sweep, size: 18, color: scheme.onPrimaryContainer),
-                      tooltip: 'Clear All Alarms',
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (displayAlarms.isNotEmpty)
-                    const SizedBox(width: 4),
                   // Details button always shows if there's alarm history
                   TextButton(
                     onPressed: () => _openDetail(context),
@@ -234,30 +222,4 @@ class AlarmPanel extends ConsumerWidget {
     );
   }
 
-  void _showResetConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear All Alarms'),
-        content: const Text('Are you sure you want to delete all alarm records? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              ref.read(alarmEventsProvider.notifier).clearAllAlarms();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All alarms cleared')),
-              );
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
-    );
-  }
 }

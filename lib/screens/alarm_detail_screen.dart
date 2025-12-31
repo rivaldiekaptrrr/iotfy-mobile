@@ -19,6 +19,14 @@ class AlarmDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alarm Details'),
+        actions: [
+          if (allAlarms.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: 'Clear All History',
+              onPressed: () => _showResetConfirmation(context, ref),
+            ),
+        ],
       ),
       body: displayAlarms.isEmpty
           ? const Center(child: Text('No alarms'))
@@ -129,5 +137,32 @@ class AlarmDetailScreen extends ConsumerWidget {
 
   String _formatDateTime(DateTime time) {
     return '${time.day}/${time.month}/${time.year} ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showResetConfirmation(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All History'),
+        content: const Text('Are you sure you want to delete all alarm records? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref.read(alarmEventsProvider.notifier).clearAllAlarms();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('All history cleared')),
+              );
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
   }
 }
