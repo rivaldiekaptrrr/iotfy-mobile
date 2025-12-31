@@ -51,16 +51,21 @@ class AlarmPanel extends ConsumerWidget {
                   ),
                 ),
                 const Spacer(),
-                if (displayAlarms.isNotEmpty) ...[
-                  IconButton(
-                    onPressed: () => _showResetConfirmation(context, ref),
-                    icon: Icon(Icons.delete_sweep, size: 18, color: scheme.onPrimaryContainer),
-                    tooltip: 'Clear All Alarms',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  const SizedBox(width: 4),
+                // Show buttons if there's any alarm (active or cleared)
+                if (allAlarms.isNotEmpty) ...[
+                  // Reset button only shows when there are active alarms
+                  if (displayAlarms.isNotEmpty)
+                    IconButton(
+                      onPressed: () => _showResetConfirmation(context, ref),
+                      icon: Icon(Icons.delete_sweep, size: 18, color: scheme.onPrimaryContainer),
+                      tooltip: 'Clear All Alarms',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (displayAlarms.isNotEmpty)
+                    const SizedBox(width: 4),
+                  // Details button always shows if there's alarm history
                   TextButton(
                     onPressed: () => _openDetail(context),
                     style: TextButton.styleFrom(
@@ -68,7 +73,12 @@ class AlarmPanel extends ConsumerWidget {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: Text('Details', style: TextStyle(fontSize: 11, color: scheme.onPrimaryContainer)),
+                    child: Text(
+                      allAlarms.length > displayAlarms.length 
+                          ? 'History (${allAlarms.length})' 
+                          : 'Details',
+                      style: TextStyle(fontSize: 11, color: scheme.onPrimaryContainer),
+                    ),
                   ),
                 ],
               ],
@@ -88,6 +98,13 @@ class AlarmPanel extends ConsumerWidget {
                           'No Active Alarms',
                           style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
                         ),
+                        if (allAlarms.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap "History" to view past alarms',
+                            style: TextStyle(color: scheme.onSurfaceVariant.withOpacity(0.7), fontSize: 10),
+                          ),
+                        ],
                       ],
                     ),
                   )
