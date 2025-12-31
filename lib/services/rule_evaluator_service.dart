@@ -8,16 +8,39 @@ import '../providers/storage_providers.dart';
 import '../providers/rule_providers.dart';
 import '../providers/alarm_providers.dart';
 import '../services/mqtt_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class RuleEvaluatorService {
   final Ref ref;
+  final FlutterLocalNotificationsPlugin _notificationsPlugin;
   
   // Track last values to avoid repeated triggers
   final Map<String, double> _lastValues = {};
   final Map<String, DateTime> _lastTriggerTimes = {};
 
-  RuleEvaluatorService(this.ref) {
+  RuleEvaluatorService(this.ref) : _notificationsPlugin = FlutterLocalNotificationsPlugin() {
+    _initNotifications();
     _startListening();
+  }
+
+  Future<void> _initNotifications() async {
+    try {
+      const initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initializationSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open notification');
+      const initializationSettingsDarwin = DarwinInitializationSettings();
+      
+      const initializationSettings = InitializationSettings(
+        android: initializationSettingsAndroid,
+        linux: initializationSettingsLinux,
+        iOS: initializationSettingsDarwin,
+        macOS: initializationSettingsDarwin,
+      );
+      
+      await _notificationsPlugin.initialize(initializationSettings);
+      print('[NOTIFICATION] Initialized successfully');
+    } catch (e) {
+      print('[NOTIFICATION] Init failed (platform may not support): $e');
+    }
   }
 
   void _startListening() {
@@ -107,7 +130,7 @@ class RuleEvaluatorService {
         
         alarmNotifier.addAlarm(alarm);
         
-        // Execute actions (without system notifications)
+        // Execute actions (with notifications enabled)
         _executeActions(rule, currentValue, sourceWidget);
         
         // Record trigger
@@ -131,11 +154,10 @@ class RuleEvaluatorService {
           _publishMqtt(action);
           break;
         case RuleActionType.showNotification:
-          // System notification disabled (requires platform-specific setup)
-          print('[NOTIFICATION] ${rule.name}: ${sourceWidget.title} = $currentValue');
+          _showNotification(action, rule, currentValue, sourceWidget);
           break;
         case RuleActionType.showInAppAlert:
-          print('[ALERT] ${rule.name}: ${sourceWidget.title} = $currentValue');
+          _showNotification(action, rule, currentValue, sourceWidget);
           break;
         case RuleActionType.logToHistory:
           _logToHistory(rule, currentValue, sourceWidget);
@@ -149,6 +171,46 @@ class RuleEvaluatorService {
     
     final mqttService = ref.read(mqttServiceProvider);
     mqttService.publish(action.mqttTopic!, action.mqttPayload!);
+  }
+
+  Future<void> _showNotification(RuleAction action, RuleConfig rule, double value, PanelWidgetConfig widget) async {
+    try {
+      const androidDetails = AndroidNotificationDetails(
+        'alarm_channel',
+        'Alarms',
+        channelDescription: 'Alarm notifications from rule engine',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      const linuxDetails = LinuxNotificationDetails();
+      const darwinDetails = DarwinNotificationDetails();
+
+      const notificationDetails = NotificationDetails(
+        android: androidDetails,
+        linux: linuxDetails,
+        iOS: darwinDetails,
+        macOS: darwinDetails,
+      );
+
+      final title = action.notificationTitle ?? '🔔 ${rule.name}';
+      final body = action.notificationBody ?? 
+        '${widget.title}: ${value.toStringAsFixed(1)} ${widget.unit ?? ''}\n'
+        'Condition: ${rule.getOperatorSymbol()} ${rule.thresholdValue}';
+
+      await _notificationsPlugin.show(
+        rule.hashCode,
+        title,
+        body,
+        notificationDetails,
+      );
+      
+      print('[NOTIFICATION] Sent: $title');
+    } catch (e) {
+      print('[NOTIFICATION] Show failed: $e');
+    }
   }
 
   void _logToHistory(RuleConfig rule, double value, PanelWidgetConfig widget) {

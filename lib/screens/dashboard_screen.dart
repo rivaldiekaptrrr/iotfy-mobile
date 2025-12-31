@@ -29,10 +29,57 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsBindingObserver {
   bool _isEditMode = false;
   final double _gridSpacing = 16;
   final double _gridPadding = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    if (state == AppLifecycleState.resumed) {
+      // App kembali dari background, check MQTT connection
+      print('[LIFECYCLE] App resumed, checking MQTT connection...');
+      _checkAndReconnectMqtt();
+    } else if (state == AppLifecycleState.paused) {
+      print('[LIFECYCLE] App paused (background)');
+    }
+  }
+
+  void _checkAndReconnectMqtt() {
+    final mqttService = ref.read(mqttServiceProvider);
+    final connectionStatus = ref.read(connectionStatusProvider);
+    
+    // Jika status connected tapi mungkin stale, force reconnect
+    if (connectionStatus.value == ConnectionStatus.connected) {
+      // Ping test dengan subscribe ulang semua widget topics
+      final dashboard = ref.read(currentDashboardProvider);
+      if (dashboard != null) {
+        print('[LIFECYCLE] Resubscribing ${dashboard.widgets.length} widget topics...');
+        for (var widget in dashboard.widgets) {
+          if (widget.subscribeTopic != null) {
+            mqttService.subscribe(widget.subscribeTopic!, qos: widget.qos);
+          }
+        }
+      }
+    } else if (connectionStatus.value == ConnectionStatus.disconnected) {
+      // Auto reconnect jika disconnected
+      print('[LIFECYCLE] Connection lost, will auto-reconnect...');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

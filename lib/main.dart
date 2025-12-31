@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'models/broker_config.dart';
 import 'models/dashboard_config.dart';
 import 'models/panel_widget_config.dart';
@@ -34,11 +35,29 @@ void main() async {
   await Hive.openBox<RuleConfig>('rule_configs');
   await Hive.openBox<AlarmEvent>('alarm_events');
 
+  // Request notification permission for Android 13+
+  await _requestNotificationPermission();
+
   runApp(
     const ProviderScope(
       child: MyApp(),
     ),
   );
+}
+
+Future<void> _requestNotificationPermission() async {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  
+  // Request permission on Android 13+ (API 33+)
+  final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  if (androidImplementation != null) {
+    final bool? granted = await androidImplementation.requestNotificationsPermission();
+    print('[PERMISSION] Notification permission: ${granted ?? false}');
+  }
 }
   
 class MyApp extends ConsumerWidget {

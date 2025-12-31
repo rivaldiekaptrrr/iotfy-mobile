@@ -48,7 +48,7 @@ class PanelWidgetConfig extends HiveObject {
     this.publishTopic,
     this.onPayload = 'ON',
     this.offPayload = 'OFF',
-    this.qos = 0,
+    this.qos = 1,  // Changed from 0 to 1 for reliability
     this.x = 0,
     this.y = 0,
     this.width = 1,
