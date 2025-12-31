@@ -74,13 +74,14 @@ class RuleConfigAdapter extends TypeAdapter<RuleConfig> {
       lastTriggeredAt: fields[8] as DateTime?,
       triggerCount: fields[9] as int,
       dashboardId: fields[10] as String,
+      severity: fields[11] as AlarmSeverity,
     );
   }
 
   @override
   void write(BinaryWriter writer, RuleConfig obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -102,7 +103,9 @@ class RuleConfigAdapter extends TypeAdapter<RuleConfig> {
       ..writeByte(9)
       ..write(obj.triggerCount)
       ..writeByte(10)
-      ..write(obj.dashboardId);
+      ..write(obj.dashboardId)
+      ..writeByte(11)
+      ..write(obj.severity);
   }
 
   @override

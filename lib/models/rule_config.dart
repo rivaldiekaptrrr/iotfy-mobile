@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import 'alarm_event.dart';
 
 part 'rule_config.g.dart';
 
@@ -57,6 +58,7 @@ class RuleConfig extends HiveObject {
   @HiveField(8) DateTime? lastTriggeredAt;
   @HiveField(9) int triggerCount;
   @HiveField(10) String dashboardId;          // Which dashboard this rule belongs to
+  @HiveField(11) AlarmSeverity severity;      // Alarm severity level
 
   RuleConfig({
     String? id,
@@ -70,6 +72,7 @@ class RuleConfig extends HiveObject {
     this.lastTriggeredAt,
     this.triggerCount = 0,
     required this.dashboardId,
+    this.severity = AlarmSeverity.minor,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
@@ -117,6 +120,7 @@ class RuleConfig extends HiveObject {
     DateTime? lastTriggeredAt,
     int? triggerCount,
     String? dashboardId,
+    AlarmSeverity? severity,
   }) {
     return RuleConfig(
       id: id,
@@ -130,6 +134,7 @@ class RuleConfig extends HiveObject {
       lastTriggeredAt: lastTriggeredAt ?? this.lastTriggeredAt,
       triggerCount: triggerCount ?? this.triggerCount,
       dashboardId: dashboardId ?? this.dashboardId,
+      severity: severity ?? this.severity,
     );
   }
 }

@@ -2,34 +2,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/rule_config.dart';
 import '../models/mqtt_message.dart';
 import '../models/panel_widget_config.dart';
+import '../models/alarm_event.dart';
 import '../providers/mqtt_providers.dart';
 import '../providers/storage_providers.dart';
 import '../providers/rule_providers.dart';
+import '../providers/alarm_providers.dart';
 import '../services/mqtt_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class RuleEvaluatorService {
   final Ref ref;
-  final FlutterLocalNotificationsPlugin _notificationsPlugin;
   
   // Track last values to avoid repeated triggers
   final Map<String, double> _lastValues = {};
   final Map<String, DateTime> _lastTriggerTimes = {};
 
-  RuleEvaluatorService(this.ref) : _notificationsPlugin = FlutterLocalNotificationsPlugin() {
-    _initNotifications();
+  RuleEvaluatorService(this.ref) {
     _startListening();
-  }
-
-  Future<void> _initNotifications() async {
-    const initializationSettingsWindows = DarwinInitializationSettings();
-    const initializationSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open notification');
-    const initializationSettings = InitializationSettings(
-      linux: initializationSettingsLinux,
-      macOS: initializationSettingsWindows,
-    );
-    
-    await _notificationsPlugin.initialize(initializationSettings);
   }
 
   void _startListening() {
@@ -47,47 +35,92 @@ class RuleEvaluatorService {
 
     // Get active rules for current dashboard
     final rules = ref.read(ruleConfigsProvider.notifier).getActiveRulesForDashboard(dashboard.id);
-    
+    if (rules.isEmpty) return; // No active rules, skip evaluation
+
     // Find widget that subscribes to this topic
-    final sourceWidget = dashboard.widgets.firstWhere(
-      (w) => w.subscribeTopic == message.topic,
-      orElse: () => PanelWidgetConfig(title: '', type: WidgetType.text, x: 0, y: 0),
-    );
+    // Note: We need to handle potential duplicate topics or multiple widgets
+    final sourceWidgets = dashboard.widgets.where((w) => w.subscribeTopic == message.topic);
     
-    if (sourceWidget.subscribeTopic == null) return;
+    if (sourceWidgets.isEmpty) {
+      // print('[RULE DEBUG] No widget found for topic: ${message.topic}'); // Too verbose for normal op
+      return;
+    }
 
     // Try to parse value as double
-    final value = double.tryParse(message.payload);
-    if (value == null) return;
+    // Trim payload to remove whitespace/newlines
+    final payloadClean = message.payload.trim();
+    final value = double.tryParse(payloadClean);
+    if (value == null) {
+      print('[RULE DEBUG] Failed to parse payload as double: "$payloadClean" (raw: "${message.payload}") for topic: ${message.topic}');
+      return;
+    }
 
-    // Evaluate rules for this widget
-    for (final rule in rules.where((r) => r.sourceWidgetId == sourceWidget.id)) {
-      _evaluateRule(rule, value, sourceWidget);
+    print('[RULE DEBUG] Evaluating topic: ${message.topic}, Value: $value');
+
+    for (final widget in sourceWidgets) {
+       // Evaluate rules for this widget
+       final widgetRules = rules.where((r) => r.sourceWidgetId == widget.id).toList();
+       
+       if (widgetRules.isNotEmpty) {
+         print('[RULE DEBUG] Found ${widgetRules.length} rules for widget "${widget.title}"');
+       }
+
+       for (final rule in widgetRules) {
+         _evaluateRule(rule, value, widget);
+       }
     }
   }
 
   void _evaluateRule(RuleConfig rule, double currentValue, PanelWidgetConfig sourceWidget) {
+    final alarmNotifier = ref.read(alarmEventsProvider.notifier);
+    final existingAlarm = alarmNotifier.getActiveAlarmForRule(rule.id);
+    
     // Check if condition is met
-    if (!rule.evaluateCondition(currentValue)) return;
-
-    // Debounce: Don't trigger same rule too frequently (30 second cooldown)
-    final lastTrigger = _lastTriggerTimes[rule.id];
-    if (lastTrigger != null && DateTime.now().difference(lastTrigger).inSeconds < 30) {
-      return;
+    final conditionMet = rule.evaluateCondition(currentValue);
+    
+    // print('[RULE DEBUG] Rule "${rule.name}": $currentValue ${rule.getOperatorSymbol()} ${rule.thresholdValue} ? $conditionMet');
+    
+    if (conditionMet) {
+      // Condition is met - create alarm if not exists
+      if (existingAlarm == null) {
+        print('[RULE DEBUG] Triggering NEW ALARM for "${rule.name}"');
+        
+        // Debounce check
+        final lastTrigger = _lastTriggerTimes[rule.id];
+        // Reduced debounce to 5s for easier testing/demo
+        if (lastTrigger != null && DateTime.now().difference(lastTrigger).inSeconds < 5) {
+           print('[RULE DEBUG] Debounce suppressed trigger for "${rule.name}" (last: $lastTrigger)');
+           return;
+        }
+        
+        // Create new alarm
+        final alarm = AlarmEvent(
+          ruleId: rule.id,
+          ruleName: rule.name,
+          sensorName: sourceWidget.title,
+          severity: rule.severity,
+          startTime: DateTime.now(),
+          triggerValue: currentValue,
+          thresholdValue: rule.thresholdValue,
+          condition: '${rule.getOperatorSymbol()} ${rule.thresholdValue}',
+        );
+        
+        alarmNotifier.addAlarm(alarm);
+        
+        // Execute actions (without system notifications)
+        _executeActions(rule, currentValue, sourceWidget);
+        
+        // Record trigger
+        ref.read(ruleConfigsProvider.notifier).recordTrigger(rule.id);
+        _lastTriggerTimes[rule.id] = DateTime.now();
+      }
+    } else {
+      // Condition not met - clear alarm if exists and not acknowledged
+      if (existingAlarm != null && existingAlarm.status != AlarmStatus.acknowledged) {
+        alarmNotifier.clearAlarm(existingAlarm.id);
+      }
     }
-
-    // Check if value actually changed significantly
-    final lastValue = _lastValues[rule.id];
-    if (lastValue != null && (lastValue - currentValue).abs() < 0.1) {
-      return; // Value hasn't changed enough
-    }
-
-    // Trigger actions
-    _executeActions(rule, currentValue, sourceWidget);
-
-    // Record trigger
-    ref.read(ruleConfigsProvider.notifier).recordTrigger(rule.id);
-    _lastTriggerTimes[rule.id] = DateTime.now();
+    
     _lastValues[rule.id] = currentValue;
   }
 
@@ -98,11 +131,11 @@ class RuleEvaluatorService {
           _publishMqtt(action);
           break;
         case RuleActionType.showNotification:
-          _showNotification(action, rule, currentValue, sourceWidget);
+          // System notification disabled (requires platform-specific setup)
+          print('[NOTIFICATION] ${rule.name}: ${sourceWidget.title} = $currentValue');
           break;
         case RuleActionType.showInAppAlert:
-          // This would require context, so we'll use notification instead for now
-          _showNotification(action, rule, currentValue, sourceWidget);
+          print('[ALERT] ${rule.name}: ${sourceWidget.title} = $currentValue');
           break;
         case RuleActionType.logToHistory:
           _logToHistory(rule, currentValue, sourceWidget);
@@ -118,27 +151,7 @@ class RuleEvaluatorService {
     mqttService.publish(action.mqttTopic!, action.mqttPayload!);
   }
 
-  Future<void> _showNotification(RuleAction action, RuleConfig rule, double value, PanelWidgetConfig widget) async {
-    const notificationDetails = NotificationDetails(
-      linux: LinuxNotificationDetails(),
-      macOS: DarwinNotificationDetails(),
-    );
-
-    final title = action.notificationTitle ?? '🔔 ${rule.name}';
-    final body = action.notificationBody ?? 
-      '${widget.title}: ${value.toStringAsFixed(1)} ${widget.unit ?? ''}\n'
-      'Condition: ${rule.getOperatorSymbol()} ${rule.thresholdValue}';
-
-    await _notificationsPlugin.show(
-      rule.hashCode, // Use rule hash as notification ID
-      title,
-      body,
-      notificationDetails,
-    );
-  }
-
   void _logToHistory(RuleConfig rule, double value, PanelWidgetConfig widget) {
-    // TODO: Implement history logging to Hive or file
     print('[RULE LOG] ${DateTime.now()}: ${rule.name} triggered - ${widget.title} = $value');
   }
 }

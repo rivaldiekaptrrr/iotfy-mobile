@@ -443,6 +443,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Map Tracker';
       case WidgetType.slider:
         return 'Slider Control';
+      case WidgetType.alarm:
+        return 'Alarm Panel';
     }
   }
 

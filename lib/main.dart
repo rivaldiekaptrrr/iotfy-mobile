@@ -5,6 +5,7 @@ import 'models/broker_config.dart';
 import 'models/dashboard_config.dart';
 import 'models/panel_widget_config.dart';
 import 'models/rule_config.dart';
+import 'models/alarm_event.dart';
 import 'providers/storage_providers.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/broker_list_screen.dart';
@@ -25,9 +26,13 @@ void main() async {
   Hive.registerAdapter(RuleOperatorAdapter());
   Hive.registerAdapter(RuleActionTypeAdapter());
   Hive.registerAdapter(RuleActionAdapter());
+  Hive.registerAdapter(AlarmEventAdapter());
+  Hive.registerAdapter(AlarmSeverityAdapter());
+  Hive.registerAdapter(AlarmStatusAdapter());
 
   // Open boxes
   await Hive.openBox<RuleConfig>('rule_configs');
+  await Hive.openBox<AlarmEvent>('alarm_events');
 
   runApp(
     const ProviderScope(

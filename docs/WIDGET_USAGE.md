@@ -89,3 +89,42 @@ Digunakan untuk melacak posisi device (GPS) secara real-time pada peta.
   - *Format Data*: Harus berupa string "lat,long" (contoh: `-6.200000,106.816666`) atau JSON (tergantung implementasi parser saat ini mendukung csv lat,lng).
 - **Map Marker Icon**: Ikon penanda di peta (pilih dari daftar icon kendaraan/marker).
 - **Color**: Warna path/marker.
+
+---
+
+##8. Alarm Panel
+Digunakan untuk menampilkan daftar alarm/alert secara real-time berdasarkan rule engine yang telah dikonfigurasi.
+
+**Konfigurasi:**
+- **Title**: Nama panel (misal: "Recent Alarms").
+- **Tidak memerlukan topic** - Data alarm otomatis ditarik dari Rule Engine.
+
+**Fitur:**
+- Tampilkan 3 alarm terbaru di panel.
+- Klik "Details" untuk melihat 10 alarm terbaru.
+- Setiap alarm menampilkan:
+  - **Severity**: Critical (merah), Major (orange), Minor (kuning)
+  - **Sensor Name**: Nama widget/sensor yang memicu alarm
+  - **Start Time**: Waktu mulai alarm
+  - **Duration**: Durasi alarm (dihitung otomatis endTime - startTime)
+  - **Status**: Active, Acknowledged, atau Cleared
+
+**Acknowledge Alarm:**
+- Buka Detail Screen
+- Klik tombol "ACK" pada alarm yang ingin di-acknowledge
+- Alarm yang di-acknowledge akan tetap tampil namun diberi badge "ACKNOWLEDGED"
+
+**Auto-Clear:**
+- Alarm akan otomatis cleared saat kondisi sensor kembali normal (tidak perlu manual clear)
+- Alarm yang acknowledged tidak akan auto-clear
+
+**Integrasi dengan Rule Engine:**
+- Alarm dibuat otomatis saat Rule Engine trige
+- Severity ditentukan saat membuat rule (bukan auto-detect)
+- Untuk membuat rule: Klik ikon "⚙️ Rule" → Add Rule → Set severity
+
+**Best Practice:**
+- Gunakan severity sesuai tingkat urgensi:
+  - **Critical**: Sistem down, bahaya keamanan
+  - **Major**: Performa degradasi signifikan
+  - **Minor**: Warning, informasi penting tapi tidak urgent

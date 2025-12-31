@@ -13,6 +13,7 @@ enum WidgetType {
   @HiveField(4) text,
   @HiveField(5) map,
   @HiveField(6) slider,
+  @HiveField(7) alarm,
 }
 
 @HiveType(typeId: 3)

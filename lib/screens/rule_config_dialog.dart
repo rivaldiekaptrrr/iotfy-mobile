@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/rule_config.dart';
 import '../models/panel_widget_config.dart';
+import '../models/alarm_event.dart';
 import '../providers/rule_providers.dart';
 import '../providers/storage_providers.dart';
 
@@ -29,6 +30,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
 
   String? _selectedWidgetId;
   RuleOperator _selectedOperator = RuleOperator.greaterThan;
+  AlarmSeverity _selectedSeverity = AlarmSeverity.minor;
   
   bool _enableNotification = true;
   bool _enableMqttPublish = false;
@@ -53,6 +55,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
     if (widget.initialRule != null) {
       _selectedWidgetId = widget.initialRule!.sourceWidgetId;
       _selectedOperator = widget.initialRule!.operator;
+      _selectedSeverity = widget.initialRule!.severity;
       
       _enableNotification = widget.initialRule!.actions
           .any((a) => a.type == RuleActionType.showNotification);
@@ -154,6 +157,27 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<AlarmSeverity>(
+                value: _selectedSeverity,
+                decoration: const InputDecoration(
+                  labelText: 'Alarm Severity',
+                  border: OutlineInputBorder(),
+                ),
+                items: AlarmSeverity.values.map((severity) => DropdownMenuItem(
+                  value: severity,
+                  child: Row(
+                    children: [
+                      Icon(_getSeverityIcon(severity), size: 16, color: _getSeverityColor(severity)),
+                      const SizedBox(width: 8),
+                      Text(severity.name.toUpperCase()),
+                    ],
+                  ),
+                )).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedSeverity = value!);
+                },
               ),
               const SizedBox(height: 16),
               const Divider(),
@@ -299,6 +323,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
       thresholdValue: threshold,
       actions: actions,
       dashboardId: widget.dashboardId,
+      severity: _selectedSeverity,
       isActive: widget.initialRule?.isActive ?? true,
       createdAt: widget.initialRule?.createdAt,
       triggerCount: widget.initialRule?.triggerCount ?? 0,
@@ -312,5 +337,27 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
     }
 
     Navigator.pop(context);
+  }
+
+  Color _getSeverityColor(AlarmSeverity severity) {
+    switch (severity) {
+      case AlarmSeverity.critical:
+        return Colors.red;
+      case AlarmSeverity.major:
+        return Colors.orange;
+      case AlarmSeverity.minor:
+        return Colors.yellow.shade700;
+    }
+  }
+
+  IconData _getSeverityIcon(AlarmSeverity severity) {
+    switch (severity) {
+      case AlarmSeverity.critical:
+        return Icons.error;
+      case AlarmSeverity.major:
+        return Icons.warning;
+      case AlarmSeverity.minor:
+        return Icons.info;
+    }
   }
 }
