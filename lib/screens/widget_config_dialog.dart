@@ -137,7 +137,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         hintText: 'sensor/temperature',
                       ),
                       validator: (value) {
-                        if (_needsSubscribeTopic() && (value == null || value.isEmpty)) {
+                        bool isOptional = _selectedType == WidgetType.toggle || 
+                                          _selectedType == WidgetType.button || 
+                                          _selectedType == WidgetType.slider || 
+                                          _selectedType == WidgetType.knob;
+                        
+                        if (!isOptional && _needsSubscribeTopic() && (value == null || value.isEmpty)) {
                           return 'Subscribe topic wajib diisi';
                         }
                         return null;
@@ -242,7 +247,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider || _selectedType == WidgetType.barChart || _selectedType == WidgetType.kpiCard) ...[
+                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider || _selectedType == WidgetType.barChart || _selectedType == WidgetType.kpiCard || 
+                      _selectedType == WidgetType.liquidTank || _selectedType == WidgetType.radialGauge || _selectedType == WidgetType.knob || _selectedType == WidgetType.battery) ...[
                     Row(
                       children: [
                         Expanded(
@@ -486,14 +492,21 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         _selectedType == WidgetType.slider ||
         _selectedType == WidgetType.statusIndicator ||
         _selectedType == WidgetType.kpiCard ||
-        _selectedType == WidgetType.barChart;
+        _selectedType == WidgetType.barChart ||
+        _selectedType == WidgetType.liquidTank ||
+        _selectedType == WidgetType.radialGauge ||
+        _selectedType == WidgetType.battery ||
+        _selectedType == WidgetType.terminal ||
+        _selectedType == WidgetType.knob;
   }
 
   bool _needsPublishTopic() {
     return _selectedType == WidgetType.toggle || 
            _selectedType == WidgetType.button ||
-           _selectedType == WidgetType.slider;
+           _selectedType == WidgetType.slider ||
+           _selectedType == WidgetType.knob;
   }
+
 
   String _getWidgetTypeName(WidgetType type) {
     switch (type) {
@@ -519,6 +532,16 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'KPI Card';
       case WidgetType.barChart:
         return 'Bar Chart';
+      case WidgetType.liquidTank:
+        return 'Liquid Tank';
+      case WidgetType.radialGauge:
+        return 'Radial Gauge';
+      case WidgetType.knob:
+        return 'Control Knob';
+      case WidgetType.battery:
+        return 'Battery Level';
+      case WidgetType.terminal:
+        return 'Terminal Log';
     }
   }
 

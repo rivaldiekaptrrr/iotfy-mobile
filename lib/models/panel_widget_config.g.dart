@@ -135,6 +135,16 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         return WidgetType.kpiCard;
       case 10:
         return WidgetType.barChart;
+      case 11:
+        return WidgetType.liquidTank;
+      case 12:
+        return WidgetType.radialGauge;
+      case 13:
+        return WidgetType.knob;
+      case 14:
+        return WidgetType.battery;
+      case 15:
+        return WidgetType.terminal;
       default:
         return WidgetType.toggle;
     }
@@ -175,6 +185,21 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         break;
       case WidgetType.barChart:
         writer.writeByte(10);
+        break;
+      case WidgetType.liquidTank:
+        writer.writeByte(11);
+        break;
+      case WidgetType.radialGauge:
+        writer.writeByte(12);
+        break;
+      case WidgetType.knob:
+        writer.writeByte(13);
+        break;
+      case WidgetType.battery:
+        writer.writeByte(14);
+        break;
+      case WidgetType.terminal:
+        writer.writeByte(15);
         break;
     }
   }

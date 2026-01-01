@@ -19,6 +19,11 @@ import '../widgets/panels/alarm_panel.dart';
 import '../widgets/panels/status_panel.dart';
 import '../widgets/panels/kpi_panel.dart';
 import '../widgets/panels/bar_chart_panel.dart';
+import '../widgets/panels/liquid_tank_panel.dart';
+import '../widgets/panels/radial_gauge_panel.dart';
+import '../widgets/panels/knob_panel.dart';
+import '../widgets/panels/battery_panel.dart';
+import '../widgets/panels/terminal_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
 import 'rule_manager_screen.dart';
@@ -388,6 +393,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       case WidgetType.barChart:
         panel = BarChartPanel(config: config);
         break;
+      case WidgetType.liquidTank:
+        panel = LiquidTankPanel(config: config);
+        break;
+      case WidgetType.radialGauge:
+        panel = RadialGaugePanel(config: config);
+        break;
+      case WidgetType.knob:
+        panel = KnobPanel(config: config);
+        break;
+      case WidgetType.battery:
+        panel = BatteryPanel(config: config);
+        break;
+      case WidgetType.terminal:
+        panel = TerminalPanel(config: config);
+        break;
     }
 
     return PanelContainer(
@@ -427,6 +447,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
             WidgetType.statusIndicator => 4,
             WidgetType.kpiCard => 4,
             WidgetType.barChart => 8,
+            WidgetType.liquidTank => 4,
+            WidgetType.radialGauge => 4,
+            WidgetType.knob => 4,
+            WidgetType.battery => 4,
+            WidgetType.terminal => 12,
           },
           height: switch (config.type) {
              WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
@@ -437,6 +462,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
              WidgetType.statusIndicator => 4,
              WidgetType.kpiCard => 3,
              WidgetType.barChart => 6,
+             WidgetType.liquidTank => 6,
+             WidgetType.radialGauge => 4,
+             WidgetType.knob => 6,
+             WidgetType.battery => 3,
+             WidgetType.terminal => 6,
           },
         );
 

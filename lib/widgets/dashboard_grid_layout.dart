@@ -194,13 +194,62 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
       y: snappedY,
     );
 
-    // Commit to parent/DB
-    widget.onWidgetUpdate(finalConfig);
+    // Check collision with OTHER widgets
+    bool hasCollision = _checkCollision(finalConfig);
+
+    if (hasCollision) {
+        // Revert to original position (implied by not calling update, or we could explicitly reset)
+        // Since we are cancelling, we just clear local state. The parent state hasn't changed yet.
+        // Option: Show snackbar?
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot place widget here: Collision detected!'), duration: Duration(milliseconds: 500)),
+        );
+    } else {
+        // Commit to parent/DB
+        widget.onWidgetUpdate(finalConfig);
+    }
     
     setState(() {
       _activeWidgetId = null;
       _activeConfig = null;
     });
+  }
+
+  bool _checkCollision(PanelWidgetConfig candidate) {
+    // Treat candidate as Rect
+    // We use a small margin to avoid "touching" errors? Integer grid should be strict.
+    final Rect candidateRect = Rect.fromLTWH(
+      candidate.x, 
+      candidate.y, 
+      candidate.width, 
+      candidate.height
+    );
+
+    for (var other in widget.widgets) {
+      if (other.id == candidate.id) continue; // Skip self
+
+      final Rect otherRect = Rect.fromLTWH(
+        other.x, 
+        other.y, 
+        other.width, 
+        other.height
+      );
+
+      if (candidateRect.overlaps(otherRect)) {
+        // Calculate intersection area to be sure it's not just touching edges
+        // Rect.overlaps returns true for touching edges? 
+        // Logic: left < right && right > left ...
+        // If x=0,w=1 (0..1) and x=1,w=1 (1..2). 
+        // 0+1 > 1 is FALSE. So touching is NOT overlapping in float logic usually.
+        // But let's be safe.
+        // Intersection
+        final intersect = candidateRect.intersect(otherRect);
+        if (intersect.width > 0.1 && intersect.height > 0.1) {
+           return true; 
+        }
+      }
+    }
+    return false;
   }
 
   // --- Resize Logic ---

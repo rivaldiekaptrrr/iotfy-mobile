@@ -17,6 +17,11 @@ enum WidgetType {
   @HiveField(8) statusIndicator,
   @HiveField(9) kpiCard,
   @HiveField(10) barChart,
+  @HiveField(11) liquidTank,
+  @HiveField(12) radialGauge,
+  @HiveField(13) knob,
+  @HiveField(14) battery,
+  @HiveField(15) terminal,
 }
 
 @HiveType(typeId: 3)
