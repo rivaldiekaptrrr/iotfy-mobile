@@ -16,6 +16,9 @@ import '../widgets/panels/line_chart_panel.dart';
 import '../widgets/panels/map_panel.dart';
 import '../widgets/panels/slider_panel.dart';
 import '../widgets/panels/alarm_panel.dart';
+import '../widgets/panels/status_panel.dart';
+import '../widgets/panels/kpi_panel.dart';
+import '../widgets/panels/bar_chart_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
 import 'rule_manager_screen.dart';
@@ -376,6 +379,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       case WidgetType.alarm:
         panel = AlarmPanel(config: config);
         break;
+      case WidgetType.statusIndicator:
+        panel = StatusPanel(config: config);
+        break;
+      case WidgetType.kpiCard:
+        panel = KPIPanel(config: config);
+        break;
+      case WidgetType.barChart:
+        panel = BarChartPanel(config: config);
+        break;
     }
 
     return PanelContainer(
@@ -412,6 +424,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
             WidgetType.lineChart || WidgetType.map => 8,
             WidgetType.slider => 6,
             WidgetType.alarm => 8,
+            WidgetType.statusIndicator => 4,
+            WidgetType.kpiCard => 4,
+            WidgetType.barChart => 8,
           },
           height: switch (config.type) {
              WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
@@ -419,6 +434,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
              WidgetType.lineChart || WidgetType.map => 6,
              WidgetType.slider => 3,
              WidgetType.alarm => 6,
+             WidgetType.statusIndicator => 4,
+             WidgetType.kpiCard => 3,
+             WidgetType.barChart => 6,
           },
         );
 

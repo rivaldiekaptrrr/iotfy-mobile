@@ -38,13 +38,15 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       isMovingMode: fields[18] as bool,
       idleTimeoutSeconds: fields[19] as int,
       mapMarkerIcon: fields[20] as int?,
+      warningThreshold: fields[21] as double?,
+      criticalThreshold: fields[22] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, PanelWidgetConfig obj) {
     writer
-      ..writeByte(21)
+      ..writeByte(23)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -86,7 +88,11 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       ..writeByte(19)
       ..write(obj.idleTimeoutSeconds)
       ..writeByte(20)
-      ..write(obj.mapMarkerIcon);
+      ..write(obj.mapMarkerIcon)
+      ..writeByte(21)
+      ..write(obj.warningThreshold)
+      ..writeByte(22)
+      ..write(obj.criticalThreshold);
   }
 
   @override
@@ -123,6 +129,12 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         return WidgetType.slider;
       case 7:
         return WidgetType.alarm;
+      case 8:
+        return WidgetType.statusIndicator;
+      case 9:
+        return WidgetType.kpiCard;
+      case 10:
+        return WidgetType.barChart;
       default:
         return WidgetType.toggle;
     }
@@ -154,6 +166,15 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         break;
       case WidgetType.alarm:
         writer.writeByte(7);
+        break;
+      case WidgetType.statusIndicator:
+        writer.writeByte(8);
+        break;
+      case WidgetType.kpiCard:
+        writer.writeByte(9);
+        break;
+      case WidgetType.barChart:
+        writer.writeByte(10);
         break;
     }
   }

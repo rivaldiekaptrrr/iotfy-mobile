@@ -14,6 +14,9 @@ enum WidgetType {
   @HiveField(5) map,
   @HiveField(6) slider,
   @HiveField(7) alarm,
+  @HiveField(8) statusIndicator,
+  @HiveField(9) kpiCard,
+  @HiveField(10) barChart,
 }
 
 @HiveType(typeId: 3)
@@ -39,6 +42,8 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(18) bool isMovingMode;
   @HiveField(19) int idleTimeoutSeconds;
   @HiveField(20) int? mapMarkerIcon;  // Icon number 1-21 untuk Map Tracker
+  @HiveField(21) double? warningThreshold;
+  @HiveField(22) double? criticalThreshold;
 
   PanelWidgetConfig({
     String? id,
@@ -62,6 +67,8 @@ class PanelWidgetConfig extends HiveObject {
     this.isMovingMode = false,
     this.idleTimeoutSeconds = 10,
     this.mapMarkerIcon,
+    this.warningThreshold,
+    this.criticalThreshold,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -92,6 +99,8 @@ class PanelWidgetConfig extends HiveObject {
     bool? isMovingMode,
     int? idleTimeoutSeconds,
     int? mapMarkerIcon,
+    double? warningThreshold,
+    double? criticalThreshold,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -115,6 +124,8 @@ class PanelWidgetConfig extends HiveObject {
       isMovingMode: isMovingMode ?? this.isMovingMode,
       idleTimeoutSeconds: idleTimeoutSeconds ?? this.idleTimeoutSeconds,
       mapMarkerIcon: mapMarkerIcon ?? this.mapMarkerIcon,
+      warningThreshold: warningThreshold ?? this.warningThreshold,
+      criticalThreshold: criticalThreshold ?? this.criticalThreshold,
     );
   }
 }

@@ -104,72 +104,105 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                       ],
                     ),
                   )
-                : SfRadialGauge(
-                    axes: <RadialAxis>[
-                      RadialAxis(
-                        startAngle: 180,
-                        endAngle: 0,
-                        canScaleToFit: true,
-                        showLabels: false,
-                        showTicks: false,
-                        minimum: widget.config.minValue ?? 0,
-                        maximum: widget.config.maxValue ?? 100,
-                        axisLineStyle: AxisLineStyle(
-                          thickness: 0.18,
-                          thicknessUnit: GaugeSizeUnit.factor,
-                          color: scheme.surfaceContainerHighest,
-                          cornerStyle: CornerStyle.bothCurve,
-                        ),
-                        pointers: <GaugePointer>[
-                          RangePointer(
-                            value: _currentValue,
-                            width: 0.18,
-                            sizeUnit: GaugeSizeUnit.factor,
+                  : SfRadialGauge(
+                      axes: <RadialAxis>[
+                        RadialAxis(
+                          startAngle: 180,
+                          endAngle: 0,
+                          canScaleToFit: true,
+                          showLabels: false,
+                          showTicks: false,
+                          minimum: widget.config.minValue ?? 0,
+                          maximum: widget.config.maxValue ?? 100,
+                          axisLineStyle: AxisLineStyle(
+                            thickness: 0.18,
+                            thicknessUnit: GaugeSizeUnit.factor,
+                            color: scheme.surfaceContainerHighest,
                             cornerStyle: CornerStyle.bothCurve,
-                            gradient: SweepGradient(
-                              colors: [
-                                widget.config.color.withOpacity(0.5),
-                                widget.config.color,
-                              ],
-                              stops: const <double>[0.25, 0.75],
-                            ),
-                            enableAnimation: true,
-                            animationDuration: 800,
-                            animationType: AnimationType.easeOutBack,
                           ),
-                        ],
-                        annotations: <GaugeAnnotation>[
-                          GaugeAnnotation(
-                            widget: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _currentValue.toStringAsFixed(1),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: scheme.onSurface,
-                                    letterSpacing: -1,
-                                  ),
-                                ),
-                                if (widget.config.unit != null && widget.config.unit!.isNotEmpty)
+                          ranges: <GaugeRange>[
+                            // Normal Range (Min to Warning or Critical or Max)
+                            GaugeRange(
+                              startValue: widget.config.minValue ?? 0,
+                              endValue: widget.config.warningThreshold ?? widget.config.criticalThreshold ?? widget.config.maxValue ?? 100,
+                              color: Colors.green, // Or using widget.config.color? Usually "Safe" is green.
+                              startWidth: 0.18,
+                              endWidth: 0.18,
+                              sizeUnit: GaugeSizeUnit.factor,
+                            ),
+                            if (widget.config.warningThreshold != null)
+                              GaugeRange(
+                                startValue: widget.config.warningThreshold!,
+                                endValue: widget.config.criticalThreshold ?? widget.config.maxValue ?? 100,
+                                color: Colors.orange,
+                                startWidth: 0.18,
+                                endWidth: 0.18,
+                                sizeUnit: GaugeSizeUnit.factor,
+                              ),
+                             if (widget.config.criticalThreshold != null)
+                              GaugeRange(
+                                startValue: widget.config.criticalThreshold!,
+                                endValue: widget.config.maxValue ?? 100,
+                                color: Colors.red,
+                                startWidth: 0.18,
+                                endWidth: 0.18,
+                                sizeUnit: GaugeSizeUnit.factor,
+                              ),
+                          ],
+                          pointers: <GaugePointer>[
+                             NeedlePointer(
+                               value: _currentValue,
+                               needleLength: 0.6,
+                               lengthUnit: GaugeSizeUnit.factor,
+                               needleStartWidth: 1,
+                               needleEndWidth: 5,
+                               knobStyle: KnobStyle(
+                                 knobRadius: 0.05,
+                                 sizeUnit: GaugeSizeUnit.factor,
+                                 color: scheme.onSurface,
+                               ),
+                               gradient: LinearGradient(
+                                 colors: [scheme.primary, scheme.tertiary],
+                                 begin: Alignment.topCenter,
+                                 end: Alignment.bottomCenter
+                               ),
+                               animationType: AnimationType.easeOutBack,
+                               enableAnimation: true,
+                               animationDuration: 800,
+                             ),
+                          ],
+                          annotations: <GaugeAnnotation>[
+                            GaugeAnnotation(
+                              widget: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
                                   Text(
-                                    widget.config.unit!,
+                                    _currentValue.toStringAsFixed(1),
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: scheme.secondary,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: scheme.onSurface,
+                                      letterSpacing: -1,
                                     ),
                                   ),
-                              ],
+                                  if (widget.config.unit != null && widget.config.unit!.isNotEmpty)
+                                    Text(
+                                      widget.config.unit!,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: scheme.secondary,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              angle: 90,
+                              positionFactor: 0.1,
                             ),
-                            angle: 90,
-                            positionFactor: 0.1,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          ],
+                        ),
+                      ],
+                    ),
           ),
         ],
       ),

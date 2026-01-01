@@ -61,6 +61,15 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
     final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
 
+    Color lineColor = widget.config.color;
+    if (_lastValue != null) {
+      if (widget.config.criticalThreshold != null && _lastValue! >= widget.config.criticalThreshold!) {
+        lineColor = Colors.red;
+      } else if (widget.config.warningThreshold != null && _lastValue! >= widget.config.warningThreshold!) {
+        lineColor = Colors.orange;
+      }
+    }
+
     // Simplified without Card wrapper as it is handled by PanelContainer
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 180),
@@ -85,14 +94,14 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: widget.config.color.withOpacity(0.1),
+                      color: lineColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       _currentValueDisplay!,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: widget.config.color,
+                        color: lineColor,
                         fontSize: 14,
                       ),
                     ),
@@ -156,12 +165,44 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                         maxX: _dataPoints.isNotEmpty ? _dataPoints.last.x : 10,
                         minY: widget.config.minValue ?? 0,
                         maxY: widget.config.maxValue ?? 100,
+                        extraLinesData: ExtraLinesData(
+                          horizontalLines: [
+                            if (widget.config.warningThreshold != null)
+                              HorizontalLine(
+                                y: widget.config.warningThreshold!,
+                                color: Colors.orange.withOpacity(0.8),
+                                strokeWidth: 1,
+                                dashArray: [10, 5],
+                                label: HorizontalLineLabel(
+                                  show: true,
+                                  alignment: Alignment.topRight,
+                                  padding: const EdgeInsets.only(right: 5, bottom: 5),
+                                  style: const TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                                  labelResolver: (line) => 'Warning', 
+                                ),
+                              ),
+                            if (widget.config.criticalThreshold != null)
+                              HorizontalLine(
+                                y: widget.config.criticalThreshold!,
+                                color: Colors.red.withOpacity(0.8),
+                                strokeWidth: 1,
+                                dashArray: [10, 5],
+                                label: HorizontalLineLabel(
+                                  show: true,
+                                  alignment: Alignment.topRight,
+                                  padding: const EdgeInsets.only(right: 5, bottom: 5),
+                                  style: const TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
+                                  labelResolver: (line) => 'Critical',
+                                ),
+                              ),
+                          ],
+                        ),
                         lineBarsData: [
                           LineChartBarData(
                             spots: _dataPoints,
                             isCurved: true,
                             curveSmoothness: 0.35,
-                            color: widget.config.color,
+                            color: lineColor,
                             barWidth: 3,
                             isStrokeCapRound: true,
                             dotData: const FlDotData(show: false),
@@ -169,8 +210,8 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                               show: true,
                               gradient: LinearGradient(
                                 colors: [
-                                  widget.config.color.withOpacity(0.3),
-                                  widget.config.color.withOpacity(0.0),
+                                  lineColor.withOpacity(0.3),
+                                  lineColor.withOpacity(0.0),
                                 ],
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,

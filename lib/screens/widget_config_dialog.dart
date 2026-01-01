@@ -21,6 +21,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   late TextEditingController _minValueController;
   late TextEditingController _maxValueController;
   late TextEditingController _unitController;
+  late TextEditingController _warningThresholdController;
+  late TextEditingController _criticalThresholdController;
 
   WidgetType _selectedType = WidgetType.toggle;
   int _qos = 0;
@@ -39,7 +41,10 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _offPayloadController = TextEditingController(text: widget.initialConfig?.offPayload ?? 'OFF');
     _minValueController = TextEditingController(text: widget.initialConfig?.minValue?.toString() ?? '0');
     _maxValueController = TextEditingController(text: widget.initialConfig?.maxValue?.toString() ?? '100');
+    _maxValueController = TextEditingController(text: widget.initialConfig?.maxValue?.toString() ?? '100');
     _unitController = TextEditingController(text: widget.initialConfig?.unit ?? '');
+    _warningThresholdController = TextEditingController(text: widget.initialConfig?.warningThreshold?.toString() ?? '');
+    _criticalThresholdController = TextEditingController(text: widget.initialConfig?.criticalThreshold?.toString() ?? '');
 
     if (widget.initialConfig != null) {
       _selectedType = widget.initialConfig!.type;
@@ -60,6 +65,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _minValueController.dispose();
     _maxValueController.dispose();
     _unitController.dispose();
+    _warningThresholdController.dispose();
+    _criticalThresholdController.dispose();
     super.dispose();
   }
 
@@ -207,7 +214,35 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider) ...[
+                  if (_selectedType == WidgetType.statusIndicator) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _onPayloadController,
+                            decoration: const InputDecoration(
+                              labelText: 'Active Payload',
+                              border: OutlineInputBorder(),
+                              hintText: 'ON, 1, etc',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _offPayloadController,
+                            decoration: const InputDecoration(
+                              labelText: 'Inactive Payload',
+                              border: OutlineInputBorder(),
+                              hintText: 'OFF, 0, etc',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider || _selectedType == WidgetType.barChart || _selectedType == WidgetType.kpiCard) ...[
                     Row(
                       children: [
                         Expanded(
@@ -241,6 +276,36 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         border: OutlineInputBorder(),
                         hintText: '°C, %, etc.',
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _warningThresholdController,
+                            decoration: const InputDecoration(
+                              labelText: 'Warning Threshold',
+                              border: OutlineInputBorder(),
+                              hintText: 'e.g. 80',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _criticalThresholdController,
+                            decoration: const InputDecoration(
+                              labelText: 'Critical Threshold',
+                              border: OutlineInputBorder(),
+                              hintText: 'e.g. 90',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -377,7 +442,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                   const SizedBox(height: 16),
                   _buildPreviewCard(),
                   const SizedBox(height: 16),
-                  if (_selectedType == WidgetType.toggle || _selectedType == WidgetType.button) ...[
+                  if (_selectedType == WidgetType.toggle || _selectedType == WidgetType.button || _selectedType == WidgetType.statusIndicator || _selectedType == WidgetType.kpiCard) ...[
                     const Text('Icon (optional):'),
                     const SizedBox(height: 8),
                     Wrap(
@@ -418,7 +483,10 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         _selectedType == WidgetType.gauge ||
         _selectedType == WidgetType.lineChart ||
         _selectedType == WidgetType.map ||
-        _selectedType == WidgetType.slider;
+        _selectedType == WidgetType.slider ||
+        _selectedType == WidgetType.statusIndicator ||
+        _selectedType == WidgetType.kpiCard ||
+        _selectedType == WidgetType.barChart;
   }
 
   bool _needsPublishTopic() {
@@ -445,6 +513,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Slider Control';
       case WidgetType.alarm:
         return 'Alarm Panel';
+      case WidgetType.statusIndicator:
+        return 'Status Indicator';
+      case WidgetType.kpiCard:
+        return 'KPI Card';
+      case WidgetType.barChart:
+        return 'Bar Chart';
     }
   }
 
@@ -551,6 +625,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         minValue: minValue,
         maxValue: maxValue,
         unit: _unitController.text.isEmpty ? null : _unitController.text,
+        warningThreshold: double.tryParse(_warningThresholdController.text),
+        criticalThreshold: double.tryParse(_criticalThresholdController.text),
         isMovingMode: false, // Default: static mode, can be toggled from panel
         idleTimeoutSeconds: 10, // Default timeout
         mapMarkerIcon: _mapMarkerIcon,
