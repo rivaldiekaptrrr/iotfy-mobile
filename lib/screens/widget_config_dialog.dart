@@ -97,23 +97,39 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 24),
-                  DropdownButtonFormField<WidgetType>(
-                    value: _selectedType,
-                    decoration: const InputDecoration(
-                      labelText: 'Widget Type',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: WidgetType.values.map((type) {
-                      return DropdownMenuItem(
-                        value: type,
-                        child: Text(_getWidgetTypeName(type)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedType = value!;
-                      });
-                    },
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<WidgetType>(
+                          value: _selectedType,
+                          decoration: const InputDecoration(
+                            labelText: 'Widget Type',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: WidgetType.values.map((type) {
+                            return DropdownMenuItem(
+                              value: type,
+                              child: Text(_getWidgetTypeName(type)),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedType = value!;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: IconButton(
+                           icon: const Icon(Icons.help_outline),
+                           onPressed: () => _showHelpDialog(context),
+                           tooltip: 'How to use this widget',
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -659,6 +675,70 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         ),
       ),
     );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${_getWidgetTypeName(_selectedType)} Guide'),
+        content: SingleChildScrollView(
+          child: Text(_getWidgetHelpText(_selectedType)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getWidgetHelpText(WidgetType type) {
+    switch (type) {
+      case WidgetType.toggle:
+        return 'Controls ON/OFF status (boolean).\n\nRequires:\n- Publish Topic: to send commands.\n- Subscribe Topic (Optional): to listen for status updates.\n- On/Off Payload: "ON"/"OFF" or "1"/"0".';
+      case WidgetType.button:
+        return 'Sends a momentary command when pressed.\n\nRequires:\n- Publish Topic: Command destination.\n- Payload: Command to send.';
+      case WidgetType.slider:
+        return 'Controls a numeric value within a range.\n\nRequires:\n- Publish Topic: to set value.\n- Min/Max Value.\n- Optional: Subscribe Topic to sync status.';
+      case WidgetType.gauge:
+      case WidgetType.radialGauge:
+        return 'Visualizes numeric data on a circular meter.\n\nRequires:\n- Subscribe Topic: Source of data.\n- Min/Max Value.\n- Thresholds (Warning/Critical): Optional for color indication.';
+      case WidgetType.linearGauge:
+        return 'Visualizes numeric data on a horizontal bar.\n\nRequires:\n- Subscribe Topic.\n- Min/Max Value.\n- Thresholds.';
+      case WidgetType.barChart:
+      case WidgetType.lineChart:
+        return 'Displays data history/trends.\n\nRequires:\n- Subscribe Topic.\n- Min/Max Value (Y-axis range).';
+      case WidgetType.text:
+      case WidgetType.kpiCard:
+        return 'Displays raw text or key numeric metris.\n\nRequires:\n- Subscribe Topic.';
+      case WidgetType.statusIndicator:
+        return 'Simple colored indicator for ON/OFF status.\n\nRequires:\n- Subscribe Topic.';
+      case WidgetType.map:
+        return 'Tracks device location.\n\nRequires:\n- Subscribe Topic: Payload must be "lat,long" csv or JSON.\n- Map Icon: Marker style.';
+      case WidgetType.liquidTank:
+        return 'Visualizes liquid level percentage.\n\nRequires:\n- Subscribe Topic.\n- Min/Max Value (Capacity).';
+      case WidgetType.knob:
+        return 'Rotary control for numeric values.\n\nRequires:\n- Publish Topic.\n- Min/Max Value.';
+      case WidgetType.battery:
+        return 'Displays battery percentage with color coding.\n\nRequires:\n- Subscribe Topic: 0-100 value.';
+      case WidgetType.terminal:
+        return 'Logs raw MQTT messages with timestamps.\n\nRequires:\n- Subscribe Topic.';
+      case WidgetType.segmentedSwitch:
+        return 'Multi-state switch (e.g., Low/Med/High).\n\nRequires:\n- Publish Topic.\n- Options: Comma-separated labels (e.g., "Low,Med,High").';
+      case WidgetType.joystick:
+        return 'Virtual Analog Joystick Control.\n\nRequires:\n- Publish Topic: Sends JSON {"x":val, "y":val}.';
+      case WidgetType.compass:
+        return 'Displays heading direction (0-360 degrees).\n\nRequires:\n- Subscribe Topic.';
+      case WidgetType.keypad:
+        return 'Numeric Keypad for PIN entry.\n\nRequires:\n- Publish Topic.';
+      case WidgetType.iconMatrix:
+        return 'Grid of status indicators.\n\nRequires:\n- Subscribe Topic: Integer bitmask.\n- Options: Comma-separated labels for each indicator bit.';
+      default:
+        return 'No help available for this widget.';
+    }
   }
 
   void _saveWidget() {
