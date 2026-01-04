@@ -7,124 +7,111 @@ Digunakan untuk mengontrol status ON/OFF (boolean) dari sebuah device, misalnya 
 
 **Konfigurasi:**
 - **Title**: Nama widget (misal: "Lampu Ruang Tamu").
-- **Subscribe Topic**: Topik MQTT untuk mendengarkan status terkini dari device.
-  - *Contoh*: `home/livingroom/light/status`
-- **Publish Topic**: Topik MQTT untuk mengirim perintah saat switch ditekan.
-  - *Contoh*: `home/livingroom/light/set`
-- **On Payload**: Payload yang dikirim/diterima untuk status ON (default: `ON`).
-- **Off Payload**: Payload yang dikirim/diterima untuk status OFF (default: `OFF`).
-- **Color**: Warna aksen switch saat aktif.
-
----
+- **Subscribe Topic** (Opsional): Topik MQTT untuk mendengarkan status terkini.
+- **Publish Topic**: Topik MQTT untuk mengirim perintah.
+- **On/Off Payload**: Payload untuk status (default: `ON`/`OFF`).
 
 ## 2. Button
-Digunakan untuk mengirim perintah sesaat (push button), misalnya untuk reset device atau trigger aksi tertentu.
+Digunakan untuk mengirim perintah sesaat (push button), misalnya untuk reset device.
 
 **Konfigurasi:**
 - **Title**: Label tombol (misal: "Reset Device").
 - **Publish Topic**: Topik MQTT tujuan pengiriman perintah.
-  - *Contoh*: `device/control/reset`
-- **Payload**: Pesan yang akan dikirim saat tombol ditekan.
-  - *Contoh*: `true`, `1`, atau JSON `{ "action": "reset" }`.
-- **Icon**: Ikon visual tombol.
 - **Color**: Warna tombol.
 
----
-
 ## 3. Slider Control
-Digunakan untuk mengontrol nilai angka dalam rentang tertentu, misalnya intensitas lampu (dimmer) atau kecepatan kipas.
+Mengontrol nilai angka dalam rentang tertentu, misalnya dimmer lampu.
 
 **Konfigurasi:**
-- **Title**: Label widget (misal: "Kecerahan Lampu").
-- **Subscribe Topic**: Topik untuk membaca nilai saat ini.
-- **Publish Topic**: Topik untuk mengirim nilai baru saat slider digeser.
-- **Min Value**: Nilai minimum slider (misal: `0`).
-- **Max Value**: Nilai maksimum slider (misal: `100`).
-- **Unit**: Satuan nilai (opsional, misal: `%`).
-- **Color**: Warna bar slider.
+- **Title**: Label widget.
+- **Publish Topic**: Topik untuk mengirim nilai.
+- **Subscribe Topic** (Opsional): Topik bacaan status.
+- **Min/Max Value**: Rentang nilai.
 
----
-
-## 4. Gauge (Analog Meter)
-Digunakan untuk memvisualisasikan data sensor berupa angka dalam bentuk meteran analog, seperti suhu, kelembaban, atau tekanan.
+## 4. Gauge & Radial Gauge
+Visualisasi meteran analog untuk data sensor seperti suhu atau tekanan.
 
 **Konfigurasi:**
-- **Title**: Label widget (misal: "Suhu Mesin").
-- **Subscribe Topic**: Topik MQTT sumber data sensor.
-- **Min Value**: Batas bawah tampilan gauge.
-- **Max Value**: Batas atas tampilan gauge.
-- **Unit**: Satuan yang ditampilkan (misal: `°C`, `Psi`).
-- **Color**: Warna indikator gauge.
+- **Subscribe Topic**: Sumber data sensor.
+- **Min/Max Value**: Batas bawah/atas tampilan.
+- **Warning/Critical Threshold**: Batas nilai untuk indikator warna kuning/merah.
 
----
-
-## 5. Line Chart (Grafik)
-Digunakan untuk menampilkan riwayat data sensor dari waktu ke waktu (time-series).
+## 5. Line Chart
+Menampilkan riwayat data sensor (time-series).
 
 **Konfigurasi:**
-- **Title**: Label grafik.
-- **Subscribe Topic**: Topik MQTT sumber data.
-- **Min Value / Max Value**: Rentang sumbu Y (vertikal).
-- **Unit**: Satuan data.
-- **Color**: Warna garis grafik.
-- *Catatan*: Grafik akan mereset riwayatnya jika aplikasi direstart, kecuali terhubung ke broker yang mengirimkan riwayat (retain/history plugin).
+- **Subscribe Topic**: Sumber data.
+- **Warning/Critical Threshold**: Garis batas horizontal pada grafik.
 
----
-
-## 6. Text Display
-Widget sederhana untuk menampilkan data mentah (raw string/number) dari MQTT.
+## 6. Liquid Tank
+Visualisasi level cairan dalam tangki dengan animasi gelombang.
 
 **Konfigurasi:**
-- **Title**: Label (misal: "Status System").
-- **Subscribe Topic**: Topik yang akan ditampilkan isinya apa adanya.
+- **Subscribe Topic**: Data level (angka).
+- **Min/Max Value**: Kapasitas tangki (Min = kosong, Max = penuh).
+- **Color**: Warna cairan.
 
----
-
-## 7. Map Tracker
-Digunakan untuk melacak posisi device (GPS) secara real-time pada peta.
-
-**Konfigurasi:**
-- **Title**: Nama tracker (misal: "Truk Logistik 1").
-- **Subscribe Topic**: Topik MQTT yang mengirimkan koordinat lat/long.
-  - *Format Data*: Harus berupa string "lat,long" (contoh: `-6.200000,106.816666`) atau JSON (tergantung implementasi parser saat ini mendukung csv lat,lng).
-- **Map Marker Icon**: Ikon penanda di peta (pilih dari daftar icon kendaraan/marker).
-- **Color**: Warna path/marker.
-
----
-
-##8. Alarm Panel
-Digunakan untuk menampilkan daftar alarm/alert secara real-time berdasarkan rule engine yang telah dikonfigurasi.
+## 7. Segmented Switch
+Kontrol multi-state untuk memilih mode (misal: Low, Med, High).
 
 **Konfigurasi:**
-- **Title**: Nama panel (misal: "Recent Alarms").
-- **Tidak memerlukan topic** - Data alarm otomatis ditarik dari Rule Engine.
+- **Publish Topic**: Topik untuk mengirim nilai pilihan.
+- **Options**: Daftar pilihan dipisahkan koma (contoh: `Low,Med,High` atau `Mode A,Mode B`).
 
-**Fitur:**
-- Tampilkan 3 alarm terbaru di panel.
-- Klik "Details" untuk melihat 10 alarm terbaru.
-- Setiap alarm menampilkan:
-  - **Severity**: Critical (merah), Major (orange), Minor (kuning)
-  - **Sensor Name**: Nama widget/sensor yang memicu alarm
-  - **Start Time**: Waktu mulai alarm
-  - **Duration**: Durasi alarm (dihitung otomatis endTime - startTime)
-  - **Status**: Active, Acknowledged, atau Cleared
+## 8. Linear Gauge
+Meteran gaya bar horizontal, cocok untuk termometer atau progress bar.
 
-**Acknowledge Alarm:**
-- Buka Detail Screen
-- Klik tombol "ACK" pada alarm yang ingin di-acknowledge
-- Alarm yang di-acknowledge akan tetap tampil namun diberi badge "ACKNOWLEDGED"
+**Konfigurasi:**
+- **Subscribe Topic**: Sumber data.
+- **Min/Max Value**: Rentang skala.
+- **Thresholds**: Indikator batas aman/bahaya.
 
-**Auto-Clear:**
-- Alarm akan otomatis cleared saat kondisi sensor kembali normal (tidak perlu manual clear)
-- Alarm yang acknowledged tidak akan auto-clear
+## 9. Virtual Joystick
+Kontrol analog X-Y axis untuk robot atau kamera PTZ.
 
-**Integrasi dengan Rule Engine:**
-- Alarm dibuat otomatis saat Rule Engine trige
-- Severity ditentukan saat membuat rule (bukan auto-detect)
-- Untuk membuat rule: Klik ikon "⚙️ Rule" → Add Rule → Set severity
+**Konfigurasi:**
+- **Publish Topic**: Mengirim koordinat JSON (contoh: `{"x": 0.5, "y": -1.0}`).
+- **Color**: Warna stick.
 
-**Best Practice:**
-- Gunakan severity sesuai tingkat urgensi:
-  - **Critical**: Sistem down, bahaya keamanan
-  - **Major**: Performa degradasi signifikan
-  - **Minor**: Warning, informasi penting tapi tidak urgent
+## 10. Compass
+Menampilkan arah mata angin (heading) 0-360 derajat.
+
+**Konfigurasi:**
+- **Subscribe Topic**: Data heading (0-360).
+- **Visual**: Menampilkan jarum kompas dan label arah (N, E, S, W).
+
+## 11. Keypad (PIN Input)
+Input angka/PIN manual.
+
+**Konfigurasi:**
+- **Publish Topic**: Topik pengiriman kode PIN.
+- **Fitur**: Tombol angka 0-9, Clear (C), dan OK (Kirim).
+
+## 12. Icon Matrix
+Grid status indikator biner untuk memantau banyak sensor sekaligus.
+
+**Konfigurasi:**
+- **Subscribe Topic**: Data integer (bitmask). 
+  - Bit 0 = Indikator 1, Bit 1 = Indikator 2, dst.
+- **Options**: Label untuk setiap indikator (dipisahkan koma, misal: `Pump 1,Pump 2,Valve A`).
+
+## 13. Terminal Log
+Menampilkan log data mentah dari MQTT dengan timestamp.
+
+**Konfigurasi:**
+- **Subscribe Topic**: Topik data stream.
+- **Fitur**: Menampilkan waktu [HH:MM:SS] dan auto-scroll ke pesan terbaru.
+
+## 14. Battery Level
+Indikator visual level baterai.
+
+**Konfigurasi:**
+- **Subscribe Topic**: Data level baterai (0-100).
+- **Visual**: Warna berubah otomatis (Hijau > 50%, Kuning > 20%, Merah < 20%).
+
+## 15. Map Tracker
+Melacak posisi GPS device.
+
+**Konfigurasi:**
+- **Subscribe Topic**: Data lat,long (csv).
+- **Map Icon**: Pilihan ikon marker kendaraan.

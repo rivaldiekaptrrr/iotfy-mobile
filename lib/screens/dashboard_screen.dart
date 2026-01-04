@@ -24,6 +24,12 @@ import '../widgets/panels/radial_gauge_panel.dart';
 import '../widgets/panels/knob_panel.dart';
 import '../widgets/panels/battery_panel.dart';
 import '../widgets/panels/terminal_panel.dart';
+import '../widgets/panels/segmented_switch_panel.dart';
+import '../widgets/panels/linear_gauge_panel.dart';
+import '../widgets/panels/joystick_panel.dart';
+import '../widgets/panels/compass_panel.dart';
+import '../widgets/panels/keypad_panel.dart';
+import '../widgets/panels/icon_matrix_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
 import 'rule_manager_screen.dart';
@@ -408,6 +414,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       case WidgetType.terminal:
         panel = TerminalPanel(config: config);
         break;
+      case WidgetType.segmentedSwitch:
+        panel = SegmentedSwitchPanel(config: config);
+        break;
+      case WidgetType.linearGauge:
+        panel = LinearGaugePanel(config: config);
+        break;
+      case WidgetType.joystick:
+        panel = JoystickPanel(config: config);
+        break;
+      case WidgetType.compass:
+        panel = CompassPanel(config: config);
+        break;
+      case WidgetType.keypad:
+        panel = KeypadPanel(config: config);
+        break;
+      case WidgetType.iconMatrix:
+        panel = IconMatrixPanel(config: config);
+        break;
     }
 
     return PanelContainer(
@@ -452,6 +476,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
             WidgetType.knob => 4,
             WidgetType.battery => 4,
             WidgetType.terminal => 12,
+            WidgetType.segmentedSwitch => 6,
+            WidgetType.linearGauge => 6,
+            WidgetType.joystick => 6,
+            WidgetType.compass => 4,
+            WidgetType.keypad => 4,
+            WidgetType.iconMatrix => 4,
           },
           height: switch (config.type) {
              WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
@@ -467,6 +497,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
              WidgetType.knob => 6,
              WidgetType.battery => 3,
              WidgetType.terminal => 6,
+             WidgetType.segmentedSwitch => 2,
+             WidgetType.linearGauge => 3,
+             WidgetType.joystick => 6,
+             WidgetType.compass => 4,
+             WidgetType.keypad => 6,
+             WidgetType.iconMatrix => 4,
           },
         );
 

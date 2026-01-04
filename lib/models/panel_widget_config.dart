@@ -22,6 +22,12 @@ enum WidgetType {
   @HiveField(13) knob,
   @HiveField(14) battery,
   @HiveField(15) terminal,
+  @HiveField(16) segmentedSwitch,
+  @HiveField(17) linearGauge,
+  @HiveField(18) joystick,
+  @HiveField(19) compass,
+  @HiveField(20) keypad,
+  @HiveField(21) iconMatrix,
 }
 
 @HiveType(typeId: 3)
@@ -49,6 +55,7 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(20) int? mapMarkerIcon;  // Icon number 1-21 untuk Map Tracker
   @HiveField(21) double? warningThreshold;
   @HiveField(22) double? criticalThreshold;
+  @HiveField(23) List<String>? options;
 
   PanelWidgetConfig({
     String? id,
@@ -74,6 +81,7 @@ class PanelWidgetConfig extends HiveObject {
     this.mapMarkerIcon,
     this.warningThreshold,
     this.criticalThreshold,
+    this.options,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -106,6 +114,7 @@ class PanelWidgetConfig extends HiveObject {
     int? mapMarkerIcon,
     double? warningThreshold,
     double? criticalThreshold,
+    List<String>? options,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -131,6 +140,7 @@ class PanelWidgetConfig extends HiveObject {
       mapMarkerIcon: mapMarkerIcon ?? this.mapMarkerIcon,
       warningThreshold: warningThreshold ?? this.warningThreshold,
       criticalThreshold: criticalThreshold ?? this.criticalThreshold,
+      options: options ?? this.options,
     );
   }
 }

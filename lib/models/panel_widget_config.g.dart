@@ -40,13 +40,14 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       mapMarkerIcon: fields[20] as int?,
       warningThreshold: fields[21] as double?,
       criticalThreshold: fields[22] as double?,
+      options: (fields[23] as List?)?.cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, PanelWidgetConfig obj) {
     writer
-      ..writeByte(23)
+      ..writeByte(24)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -92,7 +93,9 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       ..writeByte(21)
       ..write(obj.warningThreshold)
       ..writeByte(22)
-      ..write(obj.criticalThreshold);
+      ..write(obj.criticalThreshold)
+      ..writeByte(23)
+      ..write(obj.options);
   }
 
   @override
@@ -145,6 +148,18 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         return WidgetType.battery;
       case 15:
         return WidgetType.terminal;
+      case 16:
+        return WidgetType.segmentedSwitch;
+      case 17:
+        return WidgetType.linearGauge;
+      case 18:
+        return WidgetType.joystick;
+      case 19:
+        return WidgetType.compass;
+      case 20:
+        return WidgetType.keypad;
+      case 21:
+        return WidgetType.iconMatrix;
       default:
         return WidgetType.toggle;
     }
@@ -200,6 +215,24 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         break;
       case WidgetType.terminal:
         writer.writeByte(15);
+        break;
+      case WidgetType.segmentedSwitch:
+        writer.writeByte(16);
+        break;
+      case WidgetType.linearGauge:
+        writer.writeByte(17);
+        break;
+      case WidgetType.joystick:
+        writer.writeByte(18);
+        break;
+      case WidgetType.compass:
+        writer.writeByte(19);
+        break;
+      case WidgetType.keypad:
+        writer.writeByte(20);
+        break;
+      case WidgetType.iconMatrix:
+        writer.writeByte(21);
         break;
     }
   }

@@ -23,6 +23,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   late TextEditingController _unitController;
   late TextEditingController _warningThresholdController;
   late TextEditingController _criticalThresholdController;
+  late TextEditingController _optionsController;
 
   WidgetType _selectedType = WidgetType.toggle;
   int _qos = 0;
@@ -45,6 +46,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _unitController = TextEditingController(text: widget.initialConfig?.unit ?? '');
     _warningThresholdController = TextEditingController(text: widget.initialConfig?.warningThreshold?.toString() ?? '');
     _criticalThresholdController = TextEditingController(text: widget.initialConfig?.criticalThreshold?.toString() ?? '');
+    _optionsController = TextEditingController(text: widget.initialConfig?.options?.join(',') ?? '');
 
     if (widget.initialConfig != null) {
       _selectedType = widget.initialConfig!.type;
@@ -67,6 +69,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _unitController.dispose();
     _warningThresholdController.dispose();
     _criticalThresholdController.dispose();
+    _optionsController.dispose();
     super.dispose();
   }
 
@@ -165,6 +168,20 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       },
                     ),
                   if (_needsPublishTopic()) const SizedBox(height: 16),
+                  if (_needsOptions())
+                    TextFormField(
+                      controller: _optionsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Options / Labels (comma separated)',
+                        border: OutlineInputBorder(),
+                        hintText: 'Low,Med,High or S1,S2,S3',
+                      ),
+                      validator: (value) {
+                         // Optional or required?
+                         return null;
+                      },
+                    ),
+                  if (_needsOptions()) const SizedBox(height: 16),
                   if (_selectedType == WidgetType.toggle) ...[
                     Row(
                       children: [
@@ -248,7 +265,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     const SizedBox(height: 16),
                   ],
                   if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider || _selectedType == WidgetType.barChart || _selectedType == WidgetType.kpiCard || 
-                      _selectedType == WidgetType.liquidTank || _selectedType == WidgetType.radialGauge || _selectedType == WidgetType.knob || _selectedType == WidgetType.battery) ...[
+                      _selectedType == WidgetType.liquidTank || _selectedType == WidgetType.radialGauge || _selectedType == WidgetType.knob || _selectedType == WidgetType.battery ||
+                      _selectedType == WidgetType.linearGauge || _selectedType == WidgetType.compass) ...[
                     Row(
                       children: [
                         Expanded(
@@ -488,23 +506,34 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     return _selectedType == WidgetType.toggle ||
         _selectedType == WidgetType.gauge ||
         _selectedType == WidgetType.lineChart ||
+        _selectedType == WidgetType.liquidTank ||
         _selectedType == WidgetType.map ||
         _selectedType == WidgetType.slider ||
         _selectedType == WidgetType.statusIndicator ||
         _selectedType == WidgetType.kpiCard ||
         _selectedType == WidgetType.barChart ||
-        _selectedType == WidgetType.liquidTank ||
         _selectedType == WidgetType.radialGauge ||
         _selectedType == WidgetType.battery ||
         _selectedType == WidgetType.terminal ||
-        _selectedType == WidgetType.knob;
+        _selectedType == WidgetType.knob ||
+        _selectedType == WidgetType.linearGauge ||
+        _selectedType == WidgetType.compass ||
+        _selectedType == WidgetType.iconMatrix;
   }
 
   bool _needsPublishTopic() {
     return _selectedType == WidgetType.toggle || 
            _selectedType == WidgetType.button ||
            _selectedType == WidgetType.slider ||
-           _selectedType == WidgetType.knob;
+           _selectedType == WidgetType.knob ||
+           _selectedType == WidgetType.segmentedSwitch ||
+           _selectedType == WidgetType.joystick ||
+           _selectedType == WidgetType.keypad;
+  }
+
+  bool _needsOptions() {
+    return _selectedType == WidgetType.segmentedSwitch || 
+           _selectedType == WidgetType.iconMatrix;
   }
 
 
@@ -542,6 +571,18 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Battery Level';
       case WidgetType.terminal:
         return 'Terminal Log';
+      case WidgetType.segmentedSwitch:
+        return 'Segmented Switch';
+      case WidgetType.linearGauge:
+        return 'Linear Gauge';
+      case WidgetType.joystick:
+        return 'Virtual Joystick';
+      case WidgetType.compass:
+        return 'Compass';
+      case WidgetType.keypad:
+        return 'Keypad';
+      case WidgetType.iconMatrix:
+        return 'Icon Matrix';
     }
   }
 
@@ -648,6 +689,10 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         minValue: minValue,
         maxValue: maxValue,
         unit: _unitController.text.isEmpty ? null : _unitController.text,
+        // Map new fields
+        options: _optionsController.text.isNotEmpty 
+            ? _optionsController.text.split(',').map((e) => e.trim()).toList() 
+            : null,
         warningThreshold: double.tryParse(_warningThresholdController.text),
         criticalThreshold: double.tryParse(_criticalThresholdController.text),
         isMovingMode: false, // Default: static mode, can be toggled from panel
