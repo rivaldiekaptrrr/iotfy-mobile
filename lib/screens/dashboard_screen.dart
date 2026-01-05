@@ -35,6 +35,7 @@ import 'broker_list_screen.dart';
 import 'rule_manager_screen.dart';
 import '../widgets/dashboard_grid_layout.dart';
 import '../services/rule_evaluator_service.dart';
+import '../widgets/pulsing_dot.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -43,7 +44,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsBindingObserver {
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with WidgetsBindingObserver {
   bool _isEditMode = false;
   final double _gridSpacing = 16;
   final double _gridPadding = 20;
@@ -63,7 +65,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     if (state == AppLifecycleState.resumed) {
       // App kembali dari background, check MQTT connection
       print('[LIFECYCLE] App resumed, checking MQTT connection...');
@@ -76,13 +78,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
   void _checkAndReconnectMqtt() {
     final mqttService = ref.read(mqttServiceProvider);
     final connectionStatus = ref.read(connectionStatusProvider);
-    
+
     // Jika status connected tapi mungkin stale, force reconnect
     if (connectionStatus.value == ConnectionStatus.connected) {
       // Ping test dengan subscribe ulang semua widget topics
       final dashboard = ref.read(currentDashboardProvider);
       if (dashboard != null) {
-        print('[LIFECYCLE] Resubscribing ${dashboard.widgets.length} widget topics...');
+        print(
+          '[LIFECYCLE] Resubscribing ${dashboard.widgets.length} widget topics...',
+        );
         for (var widget in dashboard.widgets) {
           if (widget.subscribeTopic != null) {
             mqttService.subscribe(widget.subscribeTopic!, qos: widget.qos);
@@ -99,7 +103,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
   Widget build(BuildContext context) {
     final dashboard = ref.watch(currentDashboardProvider);
     final broker = dashboard != null
-        ? ref.watch(brokerConfigsProvider.notifier).getBroker(dashboard.brokerId)
+        ? ref
+              .watch(brokerConfigsProvider.notifier)
+              .getBroker(dashboard.brokerId)
         : null;
     final connectionStatus = ref.watch(connectionStatusProvider);
     final status = connectionStatus.value ?? ConnectionStatus.disconnected;
@@ -119,7 +125,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       appBar: AppBar(
         title: Text(dashboard.name),
         actions: [
-          _buildConnectionStatus(isConnected, isConnecting, isError, lastError, status),
+          _buildConnectionStatus(
+            isConnected,
+            isConnecting,
+            isError,
+            lastError,
+            status,
+          ),
           IconButton(
             tooltip: 'Logs',
             icon: const Icon(Icons.article_outlined),
@@ -152,7 +164,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
           ? _buildEmptyDashboardState()
           : Column(
               children: [
-                _buildHeader(context, dashboard, broker, isConnected, isConnecting, isError, lastError),
+                _buildHeader(
+                  context,
+                  dashboard,
+                  broker,
+                  isConnected,
+                  isConnecting,
+                  isError,
+                  lastError,
+                ),
                 if (_isEditMode) _buildEditModeBanner(),
                 Expanded(
                   child: DashboardGridLayout(
@@ -161,7 +181,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
                     childBuilder: _buildWidget,
                     onWidgetUpdate: _updateWidgetConfig, // For drag/resize
                     onWidgetEdit: _editWidget,
-                    onWidgetDelete: _deleteWidget, // Passing ID logic inside Wrapper or change signature
+                    onWidgetDelete:
+                        _deleteWidget, // Passing ID logic inside Wrapper or change signature
                   ),
                 ),
               ],
@@ -174,160 +195,171 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
     );
   }
 
-  Widget _buildConnectionStatus(bool isConnected, bool isConnecting, bool isError, String? lastError, ConnectionStatus status) {
-     return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Center(
-              child: Tooltip(
-                message: isConnected
-                    ? 'Connected'
-                    : isConnecting
-                        ? 'Connecting...'
-                        : isError
-                            ? 'Error: ${lastError ?? "Unknown"}'
-                            : 'Disconnected',
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Container(
-                    key: ValueKey(status),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isConnected
-                          ? Colors.green.withOpacity(0.1)
-                          : isError
-                              ? Colors.red.withOpacity(0.1)
-                              : Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                         color: isConnected
-                          ? Colors.green.withOpacity(0.5)
-                          : isError
-                              ? Colors.red.withOpacity(0.5)
-                              : Colors.grey.withOpacity(0.5),
-                         width: 1,     
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isConnecting)
-                          const SizedBox(
-                            width: 10,
-                            height: 10,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        else
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isConnected
-                                  ? Colors.green
-                                  : isError
-                                      ? Colors.red
-                                      : Colors.grey,
-                            ),
-                          ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isConnected
-                              ? 'Online'
-                              : isConnecting
-                                  ? '...'
-                                  : 'Offline',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isConnected
-                                ? Colors.green
-                                : isError
-                                    ? Colors.red
-                                    : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+  Widget _buildConnectionStatus(
+    bool isConnected,
+    bool isConnecting,
+    bool isError,
+    String? lastError,
+    ConnectionStatus status,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Center(
+        child: Tooltip(
+          message: isConnected
+              ? 'Connected'
+              : isConnecting
+              ? 'Connecting...'
+              : isError
+              ? 'Error: ${lastError ?? "Unknown"}'
+              : 'Disconnected',
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Container(
+              key: ValueKey(status),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isConnected
+                    ? Colors.green.withOpacity(0.1)
+                    : isError
+                    ? Colors.red.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isConnected
+                      ? Colors.green.withOpacity(0.5)
+                      : isError
+                      ? Colors.red.withOpacity(0.5)
+                      : Colors.grey.withOpacity(0.5),
+                  width: 1,
                 ),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isConnecting)
+                    const SizedBox(
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    PulsingDot(
+                      color: isConnected
+                          ? Colors.green
+                          : isError
+                          ? Colors.red
+                          : Colors.grey,
+                    ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isConnected
+                        ? 'Online'
+                        : isConnecting
+                        ? '...'
+                        : 'Offline',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isConnected
+                          ? Colors.green
+                          : isError
+                          ? Colors.red
+                          : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
+          ),
+        ),
+      ),
+    );
   }
 
-   Widget _buildEmptyState(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('IoT MQTT Panel'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings_outlined),
+  Widget _buildEmptyState(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('IoT MQTT Panel'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BrokerListScreen()),
+            ),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.dashboard_outlined,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Dashboard Selected',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Create a new dashboard or select an existing one.',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const BrokerListScreen()),
               ),
+              icon: const Icon(Icons.add),
+              label: const Text('Create Dashboard'),
             ),
           ],
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.4),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.dashboard_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'No Dashboard Selected',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-               const SizedBox(height: 8),
-              const Text(
-                'Create a new dashboard or select an existing one.',
-                 style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BrokerListScreen()),
-                ),
-                icon: const Icon(Icons.add),
-                label: const Text('Create Dashboard'),
-              ),
-            ],
-          ),
-        ),
-      );
-   }
+      ),
+    );
+  }
 
-   Widget _buildEmptyDashboardState() {
-     return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.widgets_outlined, size: 64, color: Theme.of(context).disabledColor),
-            const SizedBox(height: 16),
-            Text(
-              'Your dashboard is empty',
-               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                 color: Theme.of(context).disabledColor
-               ),
+  Widget _buildEmptyDashboardState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.widgets_outlined,
+            size: 64,
+            color: Theme.of(context).disabledColor,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Your dashboard is empty',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Theme.of(context).disabledColor,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Add widgets to visualize your data',
-               style: TextStyle(color: Theme.of(context).disabledColor),
-            ),
-          ],
-        ),
-      );
-   }
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add widgets to visualize your data',
+            style: TextStyle(color: Theme.of(context).disabledColor),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildEditModeBanner() {
     return Container(
@@ -336,19 +368,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+        ),
       ),
       child: Row(
         children: [
-           Icon(Icons.info_outline, color: Theme.of(context).colorScheme.onTertiaryContainer),
+          Icon(
+            Icons.info_outline,
+            color: Theme.of(context).colorScheme.onTertiaryContainer,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Drag to move widgets. Drag corners to resize.',
               style: TextStyle(
-                fontSize: 13, 
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onTertiaryContainer
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
               ),
             ),
           ),
@@ -375,10 +412,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       case WidgetType.text:
         panel = Center(
           child: Text(
-            config.title, 
+            config.title,
             style: Theme.of(context).textTheme.headlineSmall,
             textAlign: TextAlign.center,
-          )
+          ),
         );
         break;
       case WidgetType.map:
@@ -458,9 +495,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
         for (var w in dashboard.widgets) {
           if ((w.y + w.height) > maxY) maxY = w.y + w.height;
         }
-        
+
         final newConfig = config.copyWith(
-          x: 0, 
+          x: 0,
           y: maxY,
           width: switch (config.type) {
             WidgetType.toggle || WidgetType.button || WidgetType.text => 4,
@@ -484,29 +521,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
             WidgetType.iconMatrix => 4,
           },
           height: switch (config.type) {
-             WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
-             WidgetType.gauge => 5,
-             WidgetType.lineChart || WidgetType.map => 6,
-             WidgetType.slider => 3,
-             WidgetType.alarm => 6,
-             WidgetType.statusIndicator => 4,
-             WidgetType.kpiCard => 3,
-             WidgetType.barChart => 6,
-             WidgetType.liquidTank => 6,
-             WidgetType.radialGauge => 4,
-             WidgetType.knob => 6,
-             WidgetType.battery => 3,
-             WidgetType.terminal => 6,
-             WidgetType.segmentedSwitch => 2,
-             WidgetType.linearGauge => 3,
-             WidgetType.joystick => 6,
-             WidgetType.compass => 4,
-             WidgetType.keypad => 6,
-             WidgetType.iconMatrix => 4,
+            WidgetType.toggle || WidgetType.button || WidgetType.text => 3,
+            WidgetType.gauge => 5,
+            WidgetType.lineChart || WidgetType.map => 6,
+            WidgetType.slider => 3,
+            WidgetType.alarm => 6,
+            WidgetType.statusIndicator => 4,
+            WidgetType.kpiCard => 3,
+            WidgetType.barChart => 6,
+            WidgetType.liquidTank => 6,
+            WidgetType.radialGauge => 4,
+            WidgetType.knob => 6,
+            WidgetType.battery => 3,
+            WidgetType.terminal => 6,
+            WidgetType.segmentedSwitch => 2,
+            WidgetType.linearGauge => 3,
+            WidgetType.joystick => 6,
+            WidgetType.compass => 4,
+            WidgetType.keypad => 6,
+            WidgetType.iconMatrix => 4,
           },
         );
 
-        final updated = dashboard.copyWith(widgets: [...dashboard.widgets, newConfig]);
+        final updated = dashboard.copyWith(
+          widgets: [...dashboard.widgets, newConfig],
+        );
         ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
       }
     }
@@ -520,14 +559,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
     if (editedConfig != null) {
       final dashboard = ref.read(currentDashboardProvider);
       if (dashboard != null) {
-        final newWidgets = dashboard.widgets.map((w) => w.id == oldConfig.id ? editedConfig : w).toList();
+        final newWidgets = dashboard.widgets
+            .map((w) => w.id == oldConfig.id ? editedConfig : w)
+            .toList();
         final updated = dashboard.copyWith(widgets: newWidgets);
         ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
       }
     }
   }
 
-  void _deleteWidget(String id) { // Changed signature to String for DashboardGridLayout compatibility if needed, but it was already String
+  void _deleteWidget(String id) {
+    // Changed signature to String for DashboardGridLayout compatibility if needed, but it was already String
     final dashboard = ref.read(currentDashboardProvider);
     if (dashboard != null) {
       final newWidgets = dashboard.widgets.where((w) => w.id != id).toList();
@@ -540,17 +582,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
   void _updateWidgetConfig(PanelWidgetConfig updatedConfig) {
     final dashboard = ref.read(currentDashboardProvider);
     if (dashboard == null) return;
-    
+
     final newWidgets = dashboard.widgets
         .map((w) => w.id == updatedConfig.id ? updatedConfig : w)
         .toList();
     final updated = dashboard.copyWith(widgets: newWidgets);
-    
+
     // We update the state immediately
     // Note: this triggers rebuilds on every drag frame if we are not careful.
-    // DashboardGridLayout is throttled or local state based? 
-    // It calls this onPanUpdate. That might be heavy. 
-    // Ideally we optimize, but for now let's see. 
+    // DashboardGridLayout is throttled or local state based?
+    // It calls this onPanUpdate. That might be heavy.
+    // Ideally we optimize, but for now let's see.
     ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
   }
 
@@ -565,36 +607,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
           height: MediaQuery.of(context).size.height * 0.6,
           child: Column(
             children: [
-               Padding(
-                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                 child: Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                     const Text('System Logs', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                     TextButton(
-                       onPressed: () => Navigator.pop(context), 
-                       child: const Text('Close')
-                     ),
-                   ],
-                 ),
-               ),
-               const Divider(height: 1),
-               Expanded(
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'System Logs',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
                 child: Consumer(
                   builder: (context, ref, _) {
                     // Direct access to log buffer - instant, no stream waiting!
                     final mqttService = ref.watch(mqttServiceProvider);
                     final entries = mqttService.logBuffer;
-                    
+
                     // Listen to stream for rebuild trigger only
                     ref.listen(mqttLogsProvider, (_, __) {});
-                    
+
                     return entries.isEmpty
-                        ? const Center(child: Text('No logs recorded', style: TextStyle(color: Colors.grey)))
+                        ? const Center(
+                            child: Text(
+                              'No logs recorded',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
                         : ListView.separated(
                             padding: const EdgeInsets.all(16),
                             itemCount: entries.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final entry = entries[entries.length - 1 - index];
                               final color = switch (entry.level) {
@@ -607,7 +661,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Theme.of(context).dividerColor),
+                                  border: Border.all(
+                                    color: Theme.of(context).dividerColor,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,25 +671,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: color.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             entry.level.name.toUpperCase(),
-                                            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                              color: color,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                         const Spacer(),
                                         Text(
-                                          entry.time.toLocal().toIso8601String().substring(11, 19),
-                                          style: TextStyle(fontSize: 10, color: Theme.of(context).disabledColor),
+                                          entry.time
+                                              .toLocal()
+                                              .toIso8601String()
+                                              .substring(11, 19),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Theme.of(
+                                              context,
+                                            ).disabledColor,
+                                          ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(entry.message, style: const TextStyle(fontSize: 13)),
+                                    Text(
+                                      entry.message,
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
                                   ],
                                 ),
                               );
@@ -648,7 +724,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
       },
     );
   }
-
 
   Widget _buildHeader(
     BuildContext context,
@@ -668,11 +743,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-             BoxShadow(
-               color: Colors.black.withOpacity(0.04),
-               blurRadius: 10,
-               offset: const Offset(0, 4),
-             ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
@@ -683,7 +758,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
                 color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.hub_outlined, color: Theme.of(context).colorScheme.primary),
+              child: Icon(
+                Icons.hub_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -692,11 +770,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
                 children: [
                   Text(
                     broker != null ? broker.name : 'Unknown Broker',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    broker != null ? '${broker.host}:${broker.port}' : 'No broker config',
+                    broker != null
+                        ? '${broker.host}:${broker.port}'
+                        : 'No broker config',
                     style: TextStyle(
                       color: Theme.of(context).textTheme.bodySmall?.color,
                       fontSize: 12,
@@ -705,7 +788,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with WidgetsB
                 ],
               ),
             ),
-             if (broker != null)
+            if (broker != null)
               IconButton.outlined(
                 tooltip: 'Reconnect',
                 icon: const Icon(Icons.refresh_rounded),
@@ -740,7 +823,7 @@ class PanelContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cardColor = theme.cardTheme.color ?? Colors.white;
-    
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -749,15 +832,15 @@ class PanelContainer extends StatelessWidget {
             color: cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
-               BoxShadow(
-                 color: Colors.black.withOpacity(0.05),
-                 blurRadius: 10,
-                 offset: const Offset(0, 4),
-               ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
             ],
             border: Border.all(
-              color: isEditMode 
-                  ? theme.colorScheme.primary.withOpacity(0.5) 
+              color: isEditMode
+                  ? theme.colorScheme.primary.withOpacity(0.5)
                   : theme.dividerColor.withOpacity(0.1),
               width: isEditMode ? 2 : 1,
             ),
@@ -767,7 +850,7 @@ class PanelContainer extends StatelessWidget {
             child: child,
           ),
         ),
-        
+
         // Edit Overlays
         if (isEditMode)
           Positioned(
@@ -778,30 +861,35 @@ class PanelContainer extends StatelessWidget {
               child: Row(
                 children: [
                   _buildEditAction(
-                    icon: Icons.edit_rounded, 
-                    color: Colors.white, 
-                    bg: Colors.blue, 
-                    onTap: onEdit
+                    icon: Icons.edit_rounded,
+                    color: Colors.white,
+                    bg: Colors.blue,
+                    onTap: onEdit,
                   ),
                   const SizedBox(width: 4),
                   _buildEditAction(
-                    icon: Icons.close_rounded, 
-                    color: Colors.white, 
-                    bg: Colors.red, 
-                    onTap: onDelete
+                    icon: Icons.close_rounded,
+                    color: Colors.white,
+                    bg: Colors.red,
+                    onTap: onDelete,
                   ),
                 ],
               ),
-            )
+            ),
           ),
 
         if (isEditMode) /* Resize handle is now outside PanelContainer in DashboardGridLayout */
-           Container(),
+          Container(),
       ],
     );
   }
 
-  Widget _buildEditAction({required IconData icon, required Color color, required Color bg, required VoidCallback onTap}) {
+  Widget _buildEditAction({
+    required IconData icon,
+    required Color color,
+    required Color bg,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -811,7 +899,11 @@ class PanelContainer extends StatelessWidget {
           color: bg,
           shape: BoxShape.circle,
           boxShadow: [
-             BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Icon(icon, size: 16, color: color),

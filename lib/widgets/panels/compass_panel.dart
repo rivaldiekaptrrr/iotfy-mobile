@@ -18,7 +18,8 @@ class CompassPanel extends ConsumerStatefulWidget {
 class _CompassPanelState extends ConsumerState<CompassPanel> {
   double _heading = 0;
   String? _error;
-  late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
+  late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>>
+  _messageSub;
 
   @override
   void initState() {
@@ -66,61 +67,112 @@ class _CompassPanelState extends ConsumerState<CompassPanel> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    
+
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-           Text(widget.config.title, style: Theme.of(context).textTheme.titleSmall, maxLines: 1),
-           Expanded(
-             child: SfRadialGauge(
-                axes: <RadialAxis>[
-                  RadialAxis(
-                    startAngle: 270,
-                    endAngle: 270,
-                    minimum: 0,
-                    maximum: 360,
-                    showLabels: false,
-                    showTicks: true,
-                    majorTickStyle: const MajorTickStyle(length: 0.1, lengthUnit: GaugeSizeUnit.factor),
-                    minorTickStyle: const MinorTickStyle(length: 0.05, lengthUnit: GaugeSizeUnit.factor),
-                    axisLabelStyle: const GaugeTextStyle(fontSize: 12),
-                    axisLineStyle: const AxisLineStyle(
-                      thickness: 0.05,
-                      thicknessUnit: GaugeSizeUnit.factor,
+          Text(
+            widget.config.title,
+            style: Theme.of(context).textTheme.titleSmall,
+            maxLines: 1,
+          ),
+          Expanded(
+            child: SfRadialGauge(
+              axes: <RadialAxis>[
+                RadialAxis(
+                  startAngle: 270,
+                  endAngle: 270,
+                  minimum: 0,
+                  maximum: 360,
+                  showLabels: false,
+                  showTicks: true,
+                  majorTickStyle: const MajorTickStyle(
+                    length: 0.1,
+                    lengthUnit: GaugeSizeUnit.factor,
+                  ),
+                  minorTickStyle: const MinorTickStyle(
+                    length: 0.05,
+                    lengthUnit: GaugeSizeUnit.factor,
+                  ),
+                  axisLabelStyle: const GaugeTextStyle(fontSize: 12),
+                  axisLineStyle: const AxisLineStyle(
+                    thickness: 0.05,
+                    thicknessUnit: GaugeSizeUnit.factor,
+                  ),
+                  pointers: <GaugePointer>[
+                    NeedlePointer(
+                      value: _heading,
+                      needleLength: 0.6,
+                      lengthUnit: GaugeSizeUnit.factor,
+                      needleStartWidth: 1,
+                      needleEndWidth: 5,
+                      needleColor: Colors.red,
+                      knobStyle: KnobStyle(
+                        knobRadius: 0.05,
+                        color: scheme.onSurface,
+                      ),
+                      enableAnimation: true,
+                      animationDuration: 800,
                     ),
-                    pointers: <GaugePointer>[
-                      NeedlePointer(
-                        value: _heading,
-                        needleLength: 0.6,
-                        lengthUnit: GaugeSizeUnit.factor,
-                        needleStartWidth: 1,
-                        needleEndWidth: 5,
-                        needleColor: Colors.red,
-                        knobStyle: KnobStyle(knobRadius: 0.05, color: scheme.onSurface),
-                        enableAnimation: true,
-                        animationDuration: 800,
-                      )
-                    ],
-                    annotations: <GaugeAnnotation>[
-                      const GaugeAnnotation(angle: 270, positionFactor: 0.4, widget: Text('N', style: TextStyle(fontWeight: FontWeight.bold))),
-                      const GaugeAnnotation(angle: 0, positionFactor: 0.4, widget: Text('E', style: TextStyle(fontWeight: FontWeight.bold))),
-                      const GaugeAnnotation(angle: 90, positionFactor: 0.4, widget: Text('S', style: TextStyle(fontWeight: FontWeight.bold))),
-                      const GaugeAnnotation(angle: 180, positionFactor: 0.4, widget: Text('W', style: TextStyle(fontWeight: FontWeight.bold))),
-                      
-                      GaugeAnnotation(
-                        angle: 90, 
-                        positionFactor: 0.8,
-                        widget: Text(
-                          "${_heading.toStringAsFixed(0)}°",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: scheme.primary),
-                        ),
-                      )
-                    ],
-                  )
-                ],
-             ),
-           ),
+                  ],
+                  annotations: <GaugeAnnotation>[
+                    const GaugeAnnotation(
+                      angle: 270,
+                      positionFactor: 0.4,
+                      widget: Text(
+                        'N',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const GaugeAnnotation(
+                      angle: 0,
+                      positionFactor: 0.4,
+                      widget: Text(
+                        'E',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const GaugeAnnotation(
+                      angle: 90,
+                      positionFactor: 0.4,
+                      widget: Text(
+                        'S',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const GaugeAnnotation(
+                      angle: 180,
+                      positionFactor: 0.4,
+                      widget: Text(
+                        'W',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    GaugeAnnotation(
+                      angle: 90,
+                      positionFactor: 0.8,
+                      widget: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: _heading, end: _heading),
+                        duration: const Duration(milliseconds: 800),
+                        builder: (context, value, child) {
+                          return Text(
+                            "${value.toStringAsFixed(0)}°",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: scheme.primary,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

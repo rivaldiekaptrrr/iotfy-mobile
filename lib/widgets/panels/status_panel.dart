@@ -14,14 +14,28 @@ class StatusPanel extends ConsumerStatefulWidget {
   ConsumerState<StatusPanel> createState() => _StatusPanelState();
 }
 
-class _StatusPanelState extends ConsumerState<StatusPanel> {
+class _StatusPanelState extends ConsumerState<StatusPanel>
+    with SingleTickerProviderStateMixin {
   String? _lastPayload;
   DateTime? _lastUpdated;
-  late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
+  late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>>
+  _messageSub;
+  late AnimationController _controller;
+  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _glowAnimation = Tween<double>(
+      begin: 2.0,
+      end: 15.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _subscribeToTopic();
     _messageSub = ref.listenManual<AsyncValue<app_mqtt.MqttMessageData>>(
       mqttMessagesProvider,
@@ -47,6 +61,7 @@ class _StatusPanelState extends ConsumerState<StatusPanel> {
 
   @override
   void dispose() {
+    _controller.dispose();
     _messageSub.close();
     super.dispose();
   }
@@ -55,11 +70,11 @@ class _StatusPanelState extends ConsumerState<StatusPanel> {
   Widget build(BuildContext context) {
     final connectionStatus = ref.watch(connectionStatusProvider);
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
-    
+
     // Determine status
     bool isActive = false;
     bool isOff = false;
-    
+
     if (_lastPayload != null) {
       if (_lastPayload == widget.config.onPayload) {
         isActive = true;
@@ -68,8 +83,7 @@ class _StatusPanelState extends ConsumerState<StatusPanel> {
       }
     }
 
-    final activeColor = widget.config.color; // User selected color for "Active"
-    final inactiveColor = Colors.grey; 
+    final activeColor = widget.config.color;
     final warningColor = Colors.orange;
 
     Color stateColor;
@@ -89,11 +103,6 @@ class _StatusPanelState extends ConsumerState<StatusPanel> {
       stateText = _lastPayload!;
       stateIcon = Icons.check_circle;
     } else if (isOff) {
-      stateColor = inactiveColor; // Maybe allow configuring "Off" color? Default to grey/red interaction?
-      // Let's make "Off" explicitly Red if the user chose Green for Active, or just Grey? 
-      // Usually Status Indicator: Green=OK, Red=Stop.
-      // But user configures ONE color. 
-      // Let's assume Off is always Grey/Red-dish? Or let's just use Grey for off.
       stateColor = Colors.grey;
       stateText = _lastPayload!;
       stateIcon = Icons.power_settings_new;
@@ -121,46 +130,62 @@ class _StatusPanelState extends ConsumerState<StatusPanel> {
             overflow: TextOverflow.ellipsis,
           ),
           const Spacer(),
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: stateColor.withOpacity(0.2),
-              border: Border.all(
-                color: stateColor,
-                width: 4,
-              ),
-              boxShadow: isActive ? [
-                BoxShadow(
-                  color: stateColor.withOpacity(0.4),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                )
-              ] : [],
-            ),
-            child: Icon(
-              stateIcon,
-              size: 40,
-              color: stateColor,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return ScaleTransition(scale: animation, child: child);
+            },
+            child: AnimatedBuilder(
+              key: ValueKey(
+                stateText + stateColor.toString(),
+              ), // Rebuild when state changes
+              animation: _glowAnimation,
+              builder: (context, child) {
+                return Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: stateColor.withOpacity(0.2),
+                    border: Border.all(color: stateColor, width: 4),
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: stateColor.withOpacity(0.6),
+                              blurRadius:
+                                  _glowAnimation.value, // Breathing glow
+                              spreadRadius: _glowAnimation.value / 4,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Icon(stateIcon, size: 40, color: stateColor),
+                );
+              },
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            stateText,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: stateColor,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              stateText,
+              key: ValueKey(stateText),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: stateColor,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
           const Spacer(),
           if (_lastUpdated != null)
-             Text(
+            Text(
               'Updated: ${_lastUpdated!.toLocal().toString().split('.')[0].split(' ')[1]}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 10),
             ),
         ],
       ),
