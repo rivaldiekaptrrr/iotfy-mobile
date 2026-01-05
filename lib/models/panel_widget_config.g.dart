@@ -41,13 +41,16 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       warningThreshold: fields[21] as double?,
       criticalThreshold: fields[22] as double?,
       options: (fields[23] as List?)?.cast<String>(),
+      isJsonPayload: fields[24] as bool,
+      jsonPath: fields[25] as String?,
+      jsonPattern: fields[26] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, PanelWidgetConfig obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(27)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -95,7 +98,13 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       ..writeByte(22)
       ..write(obj.criticalThreshold)
       ..writeByte(23)
-      ..write(obj.options);
+      ..write(obj.options)
+      ..writeByte(24)
+      ..write(obj.isJsonPayload)
+      ..writeByte(25)
+      ..write(obj.jsonPath)
+      ..writeByte(26)
+      ..write(obj.jsonPattern);
   }
 
   @override

@@ -100,14 +100,36 @@ class ButtonPanel extends ConsumerWidget {
   }
 
   void _onButtonPressed(WidgetRef ref) {
-    if (config.publishTopic == null || config.onPayload == null) return;
+    if (config.publishTopic == null) return;
 
     final service = ref.read(mqttServiceProvider);
+    String payload;
+
+    if (config.isJsonPayload && config.jsonPattern != null) {
+      // Use JSON Pattern and replace variables
+      payload = _processJsonPattern(config.jsonPattern!, config.onPayload ?? '1');
+    } else {
+      // Use plain payload
+      payload = config.onPayload ?? 'ON';
+    }
+
     service.publish(
       config.publishTopic!,
-      config.onPayload!,
+      payload,
       qos: config.qos,
     );
+  }
+
+  String _processJsonPattern(String pattern, String value) {
+    // Replace common variables in JSON pattern
+    String result = pattern;
+    result = result.replaceAll('<value>', value);
+    result = result.replaceAll('<payload>', value);
+    result = result.replaceAll('<button-payload>', value);
+    result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+    result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+    // Add more variables as needed
+    return result;
   }
 
   void _showConnectionWarning(BuildContext context, String? lastError) {

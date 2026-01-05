@@ -23,14 +23,25 @@ class _KeypadPanelState extends ConsumerState<KeypadPanel> {
       });
     } else if (key == 'OK') {
       if (widget.config.publishTopic != null && _input.isNotEmpty) {
+        String payload;
+        if (widget.config.isJsonPayload && widget.config.jsonPattern != null) {
+          String result = widget.config.jsonPattern!;
+          result = result.replaceAll('<value>', _input);
+          result = result.replaceAll('<keypad-payload>', _input);
+          result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+          result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+          payload = result;
+        } else {
+          payload = _input;
+        }
+
         ref.read(mqttServiceProvider).publish(
-          widget.config.publishTopic!, 
-          _input,
+          widget.config.publishTopic!,
+          payload,
           retain: false
         );
         setState(() {
-          _input = ""; // Clear after send? Or keep?
-          // Feedback
+          _input = "";
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sent!'), duration: Duration(milliseconds: 500)));
         });
       }

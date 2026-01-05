@@ -56,6 +56,9 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(21) double? warningThreshold;
   @HiveField(22) double? criticalThreshold;
   @HiveField(23) List<String>? options;
+  @HiveField(24) bool isJsonPayload;
+  @HiveField(25) String? jsonPath; // For Subscribe
+  @HiveField(26) String? jsonPattern; // For Publish
 
   PanelWidgetConfig({
     String? id,
@@ -65,7 +68,7 @@ class PanelWidgetConfig extends HiveObject {
     this.publishTopic,
     this.onPayload = 'ON',
     this.offPayload = 'OFF',
-    this.qos = 1,  // Changed from 0 to 1 for reliability
+    this.qos = 1,
     this.x = 0,
     this.y = 0,
     this.width = 1,
@@ -82,6 +85,9 @@ class PanelWidgetConfig extends HiveObject {
     this.warningThreshold,
     this.criticalThreshold,
     this.options,
+    this.isJsonPayload = false,
+    this.jsonPath,
+    this.jsonPattern,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -115,6 +121,9 @@ class PanelWidgetConfig extends HiveObject {
     double? warningThreshold,
     double? criticalThreshold,
     List<String>? options,
+    bool? isJsonPayload,
+    String? jsonPath,
+    String? jsonPattern,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -141,6 +150,9 @@ class PanelWidgetConfig extends HiveObject {
       warningThreshold: warningThreshold ?? this.warningThreshold,
       criticalThreshold: criticalThreshold ?? this.criticalThreshold,
       options: options ?? this.options,
+      isJsonPayload: isJsonPayload ?? this.isJsonPayload,
+      jsonPath: jsonPath ?? this.jsonPath,
+      jsonPattern: jsonPattern ?? this.jsonPattern,
     );
   }
 }

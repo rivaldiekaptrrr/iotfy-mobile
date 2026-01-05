@@ -50,19 +50,32 @@ class _JoystickPanelState extends ConsumerState<JoystickPanel> {
   }
   
   void _publish() {
-    if (widget.config.publishTopic != null) {
-      // Normalize to -1.0 to 1.0
-      double x = (_stickPosition.dx / _radius);
-      double y = -(_stickPosition.dy / _radius); // Up is usually positive Y in controllers, but screen Y is down.
-      
-      // JSON format
-      String payload = '{"x": ${x.toStringAsFixed(2)}, "y": ${y.toStringAsFixed(2)}}';
-      ref.read(mqttServiceProvider).publish(
-        widget.config.publishTopic!, 
-        payload,
-        retain: false
-      );
+    if (widget.config.publishTopic == null) return;
+
+    final service = ref.read(mqttServiceProvider);
+    // Normalize to -1.0 to 1.0
+    double x = (_stickPosition.dx / _radius);
+    double y = -(_stickPosition.dy / _radius);
+
+    String payload;
+    if (widget.config.isJsonPayload && widget.config.jsonPattern != null) {
+      // Use JSON Pattern
+      String result = widget.config.jsonPattern!;
+      result = result.replaceAll('<x>', x.toStringAsFixed(2));
+      result = result.replaceAll('<y>', y.toStringAsFixed(2));
+      result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+      result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+      payload = result;
+    } else {
+      // Default JSON format
+      payload = '{"x": ${x.toStringAsFixed(2)}, "y": ${y.toStringAsFixed(2)}}';
     }
+
+    service.publish(
+      widget.config.publishTopic!,
+      payload,
+      retain: false
+    );
   }
 
   @override

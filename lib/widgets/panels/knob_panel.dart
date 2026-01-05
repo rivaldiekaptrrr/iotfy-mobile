@@ -32,13 +32,29 @@ class _KnobPanelState extends ConsumerState<KnobPanel> {
   }
 
   void _publishValue() {
-     if (widget.config.publishTopic != null) {
-       ref.read(mqttServiceProvider).publish(
-         widget.config.publishTopic!, 
-         _currentValue.toStringAsFixed(1), // precision?
-         retain: false 
-       );
-     }
+    if (widget.config.publishTopic == null) return;
+
+    final service = ref.read(mqttServiceProvider);
+    String payload;
+
+    if (widget.config.isJsonPayload && widget.config.jsonPattern != null) {
+      // Use JSON Pattern
+      String result = widget.config.jsonPattern!;
+      result = result.replaceAll('<value>', _currentValue.round().toString());
+      result = result.replaceAll('<knob-payload>', _currentValue.round().toString());
+      result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+      result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+      payload = result;
+    } else {
+      // Plain value
+      payload = _currentValue.round().toString();
+    }
+
+    service.publish(
+      widget.config.publishTopic!,
+      payload,
+      qos: widget.config.qos,
+    );
   }
 
   @override

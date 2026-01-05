@@ -24,6 +24,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   late TextEditingController _warningThresholdController;
   late TextEditingController _criticalThresholdController;
   late TextEditingController _optionsController;
+  late TextEditingController _jsonPathController;
+  late TextEditingController _jsonPatternController;
 
   WidgetType _selectedType = WidgetType.toggle;
   int _qos = 0;
@@ -31,6 +33,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   int? _selectedIconCodePoint;
   bool _colorInitializedFromTheme = false;
   int? _mapMarkerIcon;  // 1-21 untuk icon pack Map Tracker
+  bool _isJsonPayload = false;
 
   @override
   void initState() {
@@ -47,6 +50,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _warningThresholdController = TextEditingController(text: widget.initialConfig?.warningThreshold?.toString() ?? '');
     _criticalThresholdController = TextEditingController(text: widget.initialConfig?.criticalThreshold?.toString() ?? '');
     _optionsController = TextEditingController(text: widget.initialConfig?.options?.join(',') ?? '');
+    _jsonPathController = TextEditingController(text: widget.initialConfig?.jsonPath ?? '');
+    _jsonPatternController = TextEditingController(text: widget.initialConfig?.jsonPattern ?? '');
 
     if (widget.initialConfig != null) {
       _selectedType = widget.initialConfig!.type;
@@ -54,6 +59,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _selectedColor = widget.initialConfig!.color;
       _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
       _mapMarkerIcon = widget.initialConfig!.mapMarkerIcon;
+      _isJsonPayload = widget.initialConfig!.isJsonPayload;
     }
   }
 
@@ -70,6 +76,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _warningThresholdController.dispose();
     _criticalThresholdController.dispose();
     _optionsController.dispose();
+    _jsonPathController.dispose();
+    _jsonPatternController.dispose();
     super.dispose();
   }
 
@@ -183,7 +191,53 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         return null;
                       },
                     ),
-                  if (_needsPublishTopic()) const SizedBox(height: 16),
+                  if (_needsPublishTopic() || _needsSubscribeTopic()) ...[
+                     const SizedBox(height: 8),
+                     Row(
+                        children: [
+                          Expanded(
+                            child: SwitchListTile(
+                              title: const Text('Enable JSON Data'),
+                              subtitle: const Text('Parse or send data in JSON format'),
+                              value: _isJsonPayload,
+                              onChanged: (val) {
+                                setState(() {
+                                  _isJsonPayload = val;
+                                });
+                              },
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.info_outline),
+                            tooltip: 'JSON Documentation',
+                            onPressed: () => _showJsonHelpDialog(context),
+                          )
+                        ],
+                     ),
+                  ],
+                  if (_isJsonPayload) ...[
+                     if (_needsSubscribeTopic())
+                        TextFormField(
+                          controller: _jsonPathController,
+                          decoration: const InputDecoration(
+                            labelText: 'JsonPath for Subscribe',
+                            hintText: r'$.store.book[0].title',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                     if (_needsSubscribeTopic()) const SizedBox(height: 8),
+                     if (_needsPublishTopic())
+                        TextFormField(
+                           controller: _jsonPatternController,
+                           decoration: const InputDecoration(
+                              labelText: 'JSON Pattern for Publish',
+                              hintText: r'{"data": <value>}',
+                              border: OutlineInputBorder(),
+                           ),
+                        ),
+                     if (_needsPublishTopic()) const SizedBox(height: 8),
+                  ],
                   if (_needsOptions())
                     TextFormField(
                       controller: _optionsController,
@@ -198,7 +252,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       },
                     ),
                   if (_needsOptions()) const SizedBox(height: 16),
-                  if (_selectedType == WidgetType.toggle) ...[
+                  if (_selectedType == WidgetType.toggle && !_isJsonPayload) ...[
                     Row(
                       children: [
                         Expanded(
@@ -236,7 +290,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.button) ...[
+                  if (_selectedType == WidgetType.button && !_isJsonPayload) ...[
                     TextFormField(
                       controller: _onPayloadController,
                       decoration: const InputDecoration(
@@ -252,7 +306,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.statusIndicator) ...[
+                  if (_selectedType == WidgetType.statusIndicator && !_isJsonPayload) ...[
                     Row(
                       children: [
                         Expanded(
@@ -741,6 +795,47 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     }
   }
 
+  void _showJsonHelpDialog(BuildContext context) {
+     showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('JSON Data Documentation'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Subscribe JSON Data:', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('You can parse received messages using simple JsonPath. The supported JsonPath are listed below.\n\n'
+                   '\$	: The root object/element\n'
+                   '@	: The current object/element\n'
+                   '. :	Child member operator\n'
+                   '.. :	Recursive descendant operator\n'
+                   '* :	Wildcard matching all objects/elements regardless their names\n'
+                   '[ ]	 : Subscript operator\n'
+                   '[ , ] :	Union operator for alternate names or array indices as a set\n'
+                   '?( )	: Applies a filter (script) expression via static evaluation\n'
+                   '( )	 : Script expression via static evaluation\n\n'
+                   'Note: Only a single quote is supported inside JsonPath expression. Script expressions inside of JSONPath locations are not recursively evaluated by JsonPath. Only the global \$ and local @ symbols are expanded by a simple regular expression. This application does not validate JsonPath you provided. In case JsonPath is invalid or it does not match with any data it simply gets ignored. For debugging please use the Text Input and Text Log Panel.'),
+              Divider(height: 24),
+              Text('Publish JSON Data:', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('You can wrap publish data into a JSON format. For example, you have configured {"kitchen": {"fan": "<slider-payload>"}} as JSON pattern. Now if you set slider value to 10, then <slider-payload> will be replaced by 10 and finally {"kitchen": {"fan": "10"}} will be published.\n\n'
+                   'You can use multiple replaceable variable like <timestamp>, <client-id> etc. depending on the context. To know all available variables, press the inline help button while configuring the panel.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _saveWidget() {
     if (_formKey.currentState!.validate()) {
       final minValue = double.tryParse(_minValueController.text) ?? 0;
@@ -778,6 +873,9 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         isMovingMode: false, // Default: static mode, can be toggled from panel
         idleTimeoutSeconds: 10, // Default timeout
         mapMarkerIcon: _mapMarkerIcon,
+        isJsonPayload: _isJsonPayload,
+        jsonPath: _isJsonPayload ? _jsonPathController.text : null,
+        jsonPattern: _isJsonPayload ? _jsonPatternController.text : null,
         x: widget.initialConfig?.x ?? 0,
         y: widget.initialConfig?.y ?? 0,
         width: widget.initialConfig?.width ?? 1,

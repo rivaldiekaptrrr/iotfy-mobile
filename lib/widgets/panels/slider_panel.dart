@@ -164,10 +164,24 @@ class _SliderPanelState extends ConsumerState<SliderPanel> {
     if (widget.config.publishTopic == null) return;
     
     final service = ref.read(mqttServiceProvider);
-    // Publish as integer string
+    String payload;
+
+    if (widget.config.isJsonPayload && widget.config.jsonPattern != null) {
+      // Use JSON Pattern
+      String result = widget.config.jsonPattern!;
+      result = result.replaceAll('<value>', value.round().toString());
+      result = result.replaceAll('<slider-payload>', value.round().toString());
+      result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+      result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+      payload = result;
+    } else {
+      // Plain value
+      payload = value.round().toString();
+    }
+
     service.publish(
       widget.config.publishTopic!,
-      value.round().toString(),
+      payload,
       qos: widget.config.qos,
     );
   }

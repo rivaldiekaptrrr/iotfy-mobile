@@ -154,7 +154,15 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
     });
 
     final service = ref.read(mqttServiceProvider);
-    final payload = value ? widget.config.onPayload! : widget.config.offPayload!;
+    String payload;
+
+    if (widget.config.isJsonPayload && widget.config.jsonPattern != null) {
+      // Use JSON Pattern and replace variables
+      payload = _processJsonPattern(widget.config.jsonPattern!, value);
+    } else {
+      // Use plain payload
+      payload = value ? (widget.config.onPayload ?? 'ON') : (widget.config.offPayload ?? 'OFF');
+    }
     
     service.publish(
       widget.config.publishTopic!,
@@ -169,6 +177,19 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
         });
       }
     });
+  }
+
+  String _processJsonPattern(String pattern, bool value) {
+    // Replace common variables in JSON pattern
+    String result = pattern;
+    result = result.replaceAll('<value>', value ? '1' : '0');
+    result = result.replaceAll('<state>', value ? 'true' : 'false');
+    result = result.replaceAll('<on-payload>', widget.config.onPayload ?? 'ON');
+    result = result.replaceAll('<off-payload>', widget.config.offPayload ?? 'OFF');
+    result = result.replaceAll('<payload>', value ? (widget.config.onPayload ?? 'ON') : (widget.config.offPayload ?? 'OFF'));
+    result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+    result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+    return result;
   }
 
   void _showConnectionWarning(BuildContext context, String? lastError) {

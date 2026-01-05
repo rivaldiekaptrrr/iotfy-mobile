@@ -28,9 +28,23 @@ class _SegmentedSwitchPanelState extends ConsumerState<SegmentedSwitchPanel> {
   void _publish(int index) {
     if (widget.config.publishTopic != null) {
       final val = _options[index];
+      String payload;
+
+      if (widget.config.isJsonPayload && widget.config.jsonPattern != null) {
+        String result = widget.config.jsonPattern!;
+        result = result.replaceAll('<value>', val);
+        result = result.replaceAll('<option>', val);
+        result = result.replaceAll('<index>', index.toString());
+        result = result.replaceAll('<timestamp>', DateTime.now().millisecondsSinceEpoch.toString());
+        result = result.replaceAll('<iso-timestamp>', DateTime.now().toIso8601String());
+        payload = result;
+      } else {
+        payload = val;
+      }
+
       ref.read(mqttServiceProvider).publish(
-        widget.config.publishTopic!, 
-        val,
+        widget.config.publishTopic!,
+        payload,
         retain: widget.config.qos == 1 || widget.config.qos == 2
       );
       setState(() {
