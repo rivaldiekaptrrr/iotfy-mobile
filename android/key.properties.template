@@ -1,0 +1,32 @@
+# ===================================================
+# KEY PROPERTIES - Valiot Dashboard
+# ===================================================
+# ⚠️ FILE INI BERISI INFORMASI SENSITIF!
+# ⚠️ JANGAN COMMIT KE GIT!
+# ===================================================
+
+# Password untuk keystore file
+storePassword=YOUR_KEYSTORE_PASSWORD_HERE
+
+# Password untuk key di dalam keystore (biasanya sama dengan storePassword)
+keyPassword=YOUR_KEY_PASSWORD_HERE
+
+# Alias yang digunakan saat generate keystore
+keyAlias=upload
+
+# Lokasi file keystore
+# Opsi 1: Jika keystore di folder android/
+storeFile=upload-keystore.jks
+
+# Opsi 2: Jika keystore di luar project (RECOMMENDED)
+# storeFile=C:/AndroidKeys/valiotdashboard-upload-keystore.jks
+
+# ===================================================
+# INSTRUKSI:
+# ===================================================
+# 1. Ganti YOUR_KEYSTORE_PASSWORD_HERE dengan password keystore Anda
+# 2. Ganti YOUR_KEY_PASSWORD_HERE dengan password key Anda
+# 3. Sesuaikan storeFile dengan lokasi keystore file Anda
+# 4. Simpan file ini
+# 5. Pastikan file ini sudah ada di .gitignore
+# ===================================================
