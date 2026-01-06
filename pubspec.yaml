@@ -1,5 +1,5 @@
-name: VALIoT
-description: "IoT MQTT Panel - Dashboard for IoT devices with MQTT connectivity"
+name: iotify_platform
+description: "IoTify Platform - Smart IoT Dashboard with MQTT connectivity"
 publish_to: 'none'
 
 version: 1.0.0+1
