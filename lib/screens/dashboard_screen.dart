@@ -36,6 +36,7 @@ import 'rule_manager_screen.dart';
 import '../widgets/dashboard_grid_layout.dart';
 import '../services/rule_evaluator_service.dart';
 import '../widgets/pulsing_dot.dart';
+import 'widget_catalog_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -104,8 +105,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final dashboard = ref.watch(currentDashboardProvider);
     final broker = dashboard != null
         ? ref
-              .watch(brokerConfigsProvider.notifier)
-              .getBroker(dashboard.brokerId)
+            .watch(brokerConfigsProvider.notifier)
+            .getBroker(dashboard.brokerId)
         : null;
     final connectionStatus = ref.watch(connectionStatusProvider);
     final status = connectionStatus.value ?? ConnectionStatus.disconnected;
@@ -181,8 +182,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     childBuilder: _buildWidget,
                     onWidgetUpdate: _updateWidgetConfig, // For drag/resize
                     onWidgetEdit: _editWidget,
-                    onWidgetDelete:
-                        _deleteWidget, // Passing ID logic inside Wrapper or change signature
+                    onWidgetDelete: _deleteWidget,
                   ),
                 ),
               ],
@@ -483,9 +483,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   /* Widget Wraps Removed */
 
   Future<void> _addWidget() async {
+    // 1. Open Catalog to select type
+    final selectedType = await Navigator.push<WidgetType>(
+      context,
+      MaterialPageRoute(builder: (_) => const WidgetCatalogScreen()),
+    );
+
+    if (selectedType == null) return; // Cancelled
+
+    // 2. Open Config Dialog with pre-selected type
     final config = await showDialog<PanelWidgetConfig>(
       context: context,
-      builder: (_) => const WidgetConfigDialog(),
+      builder: (_) => WidgetConfigDialog(preSelectedType: selectedType),
     );
     if (config != null) {
       final dashboard = ref.read(currentDashboardProvider);

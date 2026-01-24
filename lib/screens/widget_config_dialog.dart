@@ -4,8 +4,9 @@ import '../utils/icon_helper.dart';
 
 class WidgetConfigDialog extends StatefulWidget {
   final PanelWidgetConfig? initialConfig;
+  final WidgetType? preSelectedType;
 
-  const WidgetConfigDialog({super.key, this.initialConfig});
+  const WidgetConfigDialog({super.key, this.initialConfig, this.preSelectedType});
 
   @override
   State<WidgetConfigDialog> createState() => _WidgetConfigDialogState();
@@ -45,7 +46,6 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
     _offPayloadController = TextEditingController(text: widget.initialConfig?.offPayload ?? 'OFF');
     _minValueController = TextEditingController(text: widget.initialConfig?.minValue?.toString() ?? '0');
     _maxValueController = TextEditingController(text: widget.initialConfig?.maxValue?.toString() ?? '100');
-    _maxValueController = TextEditingController(text: widget.initialConfig?.maxValue?.toString() ?? '100');
     _unitController = TextEditingController(text: widget.initialConfig?.unit ?? '');
     _warningThresholdController = TextEditingController(text: widget.initialConfig?.warningThreshold?.toString() ?? '');
     _criticalThresholdController = TextEditingController(text: widget.initialConfig?.criticalThreshold?.toString() ?? '');
@@ -60,6 +60,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
       _mapMarkerIcon = widget.initialConfig!.mapMarkerIcon;
       _isJsonPayload = widget.initialConfig!.isJsonPayload;
+    } else if (widget.preSelectedType != null) {
+      _selectedType = widget.preSelectedType!;
     }
   }
 
