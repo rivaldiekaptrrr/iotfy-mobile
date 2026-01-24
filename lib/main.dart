@@ -7,11 +7,8 @@ import 'models/dashboard_config.dart';
 import 'models/panel_widget_config.dart';
 import 'models/rule_config.dart';
 import 'models/alarm_event.dart';
-import 'providers/storage_providers.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/broker_list_screen.dart';
+import 'screens/splash_screen.dart';
 
-//ssssss
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -244,62 +241,3 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-class SplashScreen extends ConsumerStatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends ConsumerState<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    // Wait for providers to initialize
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      final currentDashboard = ref.read(currentDashboardIdProvider);
-      
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => currentDashboard != null 
-              ? const DashboardScreen() 
-              : const BrokerListScreen(),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.cloud_queue,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'IoT MQTT Panel',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            const CircularProgressIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
-}
