@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import '../../models/panel_widget_config.dart';
+import '../ui_utils.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
 import '../../services/mqtt_service.dart';
@@ -21,11 +22,22 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
   DateTime? _lastUpdated;
   double? _lastValue;
+  bool _showShimmer = true;
 
   @override
   void initState() {
     super.initState();
     _subscribeToTopic();
+    
+    // After 5 seconds, stop showing shimmer if no data received
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && _lastValue == null && _error == null) {
+        setState(() {
+          _showShimmer = false;
+        });
+      }
+    });
+    
     _messageSub = ref.listenManual<AsyncValue<app_mqtt.MqttMessageData>>(
       mqttMessagesProvider,
       (_, next) {
@@ -58,6 +70,29 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
+    final isLoading = isConnected && _lastValue == null && _error == null && _showShimmer;
+
+    if (isLoading) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const DataLoadingShimmer(
+              width: 100,
+              height: 20,
+              borderRadius: BorderRadius.all(Radius.circular(4)),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: DataLoadingShimmer(
+                width: double.infinity,
+                borderRadius: BorderRadius.circular(100), // Circle look
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     // Simplified without Card wrapper as it is handled by PanelContainer
     return Padding(
@@ -104,6 +139,37 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                       ],
                     ),
                   )
+                  : _lastValue == null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.show_chart_outlined,
+                              color: Colors.grey,
+                              size: 32,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No data available',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Waiting for data from:\n${widget.config.subscribeTopic}',
+                              style: TextStyle(
+                                color: Colors.grey.withOpacity(0.7),
+                                fontSize: 10,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
                   : SfRadialGauge(
                       axes: <RadialAxis>[
                         RadialAxis(
@@ -176,8 +242,8 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                               widget: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    _currentValue.toStringAsFixed(1),
+                                  ValueTransition(
+                                    value: _currentValue.toStringAsFixed(1),
                                     style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -197,7 +263,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                                 ],
                               ),
                               angle: 90,
-                              positionFactor: 0.1,
+                              positionFactor: 0.2,
                             ),
                           ],
                         ),
