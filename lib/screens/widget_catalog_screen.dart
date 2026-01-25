@@ -28,7 +28,6 @@ class WidgetCatalogScreen extends StatelessWidget {
             Icons.speed,
             Icons.timelapse,
             Icons.water,
-            Icons.battery_full,
           ]),
           _buildCategoryCard(context, WidgetCategory.controls, [
             Icons.toggle_on,
@@ -44,6 +43,7 @@ class WidgetCatalogScreen extends StatelessWidget {
           _buildCategoryCard(context, WidgetCategory.indicators, [
             Icons.circle,
             Icons.grid_view,
+            Icons.battery_full,
             Icons.traffic,
           ]),
           _buildCategoryCard(context, WidgetCategory.others, [
@@ -236,11 +236,6 @@ class WidgetCatalogScreen extends StatelessWidget {
         icon = Icons.timelapse; // Close enough
         description = 'Circular progress gauge';
         break;
-      case WidgetType.battery:
-        name = 'Battery';
-        icon = Icons.battery_full;
-        description = 'Battery level indicator';
-        break;
       case WidgetType.linearGauge:
         name = 'Linear Gauge';
         icon = Icons.linear_scale;
@@ -299,6 +294,11 @@ class WidgetCatalogScreen extends StatelessWidget {
         name = 'Icon Matrix';
         icon = Icons.grid_view;
         description = 'Grid of status icons';
+        break;
+      case WidgetType.battery:
+        name = 'Battery';
+        icon = Icons.battery_full;
+        description = 'Battery level indicator';
         break;
     }
 

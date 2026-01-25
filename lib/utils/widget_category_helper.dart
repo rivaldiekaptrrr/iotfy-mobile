@@ -23,7 +23,6 @@ class WidgetCategoryHelper {
       case WidgetType.radialGauge:
       case WidgetType.linearGauge:
       case WidgetType.liquidTank:
-      case WidgetType.battery:
         return WidgetCategory.gauges;
 
       // Controls
@@ -44,6 +43,7 @@ class WidgetCategoryHelper {
       // Indicators
       case WidgetType.statusIndicator:
       case WidgetType.iconMatrix:
+      case WidgetType.battery:
         return WidgetCategory.indicators;
 
       // Others
