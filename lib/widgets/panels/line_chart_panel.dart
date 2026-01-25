@@ -226,7 +226,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                              getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((spot) {
                                   return LineTooltipItem(
-                                    spot.y.toStringAsFixed(2),
+                                    spot.y.toStringAsFixed(widget.config.decimalPlaces),
                                     TextStyle(
                                       color: scheme.onSurface,
                                       fontWeight: FontWeight.bold,
@@ -274,7 +274,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
         _error = null;
         _lastValue = value;
         _lastUpdated = DateTime.now();
-        _currentValueDisplay = value.toStringAsFixed(2);
+        _currentValueDisplay = value.toStringAsFixed(widget.config.decimalPlaces);
       });
     } catch (e) {
       setState(() {

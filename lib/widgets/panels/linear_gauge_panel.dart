@@ -94,7 +94,7 @@ class _LinearGaugePanelState extends ConsumerState<LinearGaugePanel> {
                  )
                ),
                Text(
-                 "${_currentValue.toStringAsFixed(1)} ${widget.config.unit ?? ''}", 
+                 "${_currentValue.toStringAsFixed(widget.config.decimalPlaces)} ${widget.config.unit ?? ''}", 
                  style: const TextStyle(fontWeight: FontWeight.bold)
                ),
             ],

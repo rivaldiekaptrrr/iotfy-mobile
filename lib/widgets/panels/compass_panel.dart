@@ -158,7 +158,7 @@ class _CompassPanelState extends ConsumerState<CompassPanel> {
                         duration: const Duration(milliseconds: 800),
                         builder: (context, value, child) {
                           return Text(
-                            "${value.toStringAsFixed(0)}°",
+                            "${value.toStringAsFixed(widget.config.decimalPlaces)}°",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

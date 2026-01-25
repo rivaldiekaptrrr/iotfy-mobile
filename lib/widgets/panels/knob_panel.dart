@@ -78,7 +78,7 @@ class _KnobPanelState extends ConsumerState<KnobPanel> {
               },
            ),
            const Spacer(),
-           Text("${_currentValue.toStringAsFixed(1)} ${widget.config.unit ?? ''}", style: const TextStyle(fontWeight: FontWeight.bold)),
+           Text("${_currentValue.toStringAsFixed(widget.config.decimalPlaces)} ${widget.config.unit ?? ''}", style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       )
     );

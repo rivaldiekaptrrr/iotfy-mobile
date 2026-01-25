@@ -109,7 +109,7 @@ class _RadialGaugePanelState extends ConsumerState<RadialGaugePanel> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _currentValue.toStringAsFixed(1),
+                              _currentValue.toStringAsFixed(widget.config.decimalPlaces),
                               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: scheme.onSurface),
                             ),
                             if (widget.config.unit != null)

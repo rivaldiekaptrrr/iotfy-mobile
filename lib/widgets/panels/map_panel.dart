@@ -430,68 +430,71 @@ class _MapPanelState extends ConsumerState<MapPanel> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentPosition,
-              initialZoom: 15.0,
-              onMapReady: () {
-                _mapReady = true;
-                if (_hasReceivedData) {
-                  _updateCamera();
-                }
-              },
-            ),
-            children: [
-              // OpenStreetMap Tile Layer - FREE, no API key needed!
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.valiotdashboard',
-                maxZoom: 19,
+          child: Hero(
+            tag: '${widget.config.id}_map',
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _currentPosition,
+                initialZoom: 15.0,
+                onMapReady: () {
+                  _mapReady = true;
+                  if (_hasReceivedData) {
+                    _updateCamera();
+                  }
+                },
               ),
-              
-              // Path polyline - untuk tracking atau playback
-              if ((_isMovingMode && _path.length > 1) || (_isPlayingHistory && _historyPath.length > 1))
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _isPlayingHistory ? _historyPath : _path,
-                      color: _isPlayingHistory 
-                          ? widget.config.color.withOpacity(0.6) 
-                          : widget.config.color,
-                      strokeWidth: 4.0,
-                    ),
-                  ],
+              children: [
+                // OpenStreetMap Tile Layer - FREE, no API key needed!
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.valiotdashboard',
+                  maxZoom: 19,
                 ),
-              
-              // History path trail saat playback (menunjukkan progress)
-              if (_isPlayingHistory && _playbackIndex > 0)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _historyPath.sublist(0, _playbackIndex + 1),
-                      color: widget.config.color,
-                      strokeWidth: 5.0,
-                    ),
-                  ],
-                ),
-              
-              // Marker layer - posisi berdasarkan mode (live atau playback)
-              if (_hasReceivedData || _isPlayingHistory)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _isPlayingHistory ? _playbackPosition : _currentPosition,
-                      width: 56,
-                      height: 56,
-                      child: Transform.rotate(
-                        angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
-                        child: _buildMarkerWidget(),
+                
+                // Path polyline - untuk tracking atau playback
+                if ((_isMovingMode && _path.length > 1) || (_isPlayingHistory && _historyPath.length > 1))
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _isPlayingHistory ? _historyPath : _path,
+                        color: _isPlayingHistory 
+                            ? widget.config.color.withOpacity(0.6) 
+                            : widget.config.color,
+                        strokeWidth: 4.0,
                       ),
-                    ),
-                  ],
-                ),
-            ],
+                    ],
+                  ),
+                
+                // History path trail saat playback (menunjukkan progress)
+                if (_isPlayingHistory && _playbackIndex > 0)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _historyPath.sublist(0, _playbackIndex + 1),
+                        color: widget.config.color,
+                        strokeWidth: 5.0,
+                      ),
+                    ],
+                  ),
+                
+                // Marker layer - posisi berdasarkan mode (live atau playback)
+                if (_hasReceivedData || _isPlayingHistory)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _isPlayingHistory ? _playbackPosition : _currentPosition,
+                        width: 56,
+                        height: 56,
+                        child: Transform.rotate(
+                          angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
+                          child: _buildMarkerWidget(),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
         ),
         
@@ -711,7 +714,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                             Icon(Icons.speed, color: Colors.white70, size: 10),
                             const SizedBox(width: 2),
                             Text(
-                              '${_speedKmh.toStringAsFixed(1)} km/h',
+                              '${_speedKmh.toStringAsFixed(widget.config.decimalPlaces)} km/h',
                               style: const TextStyle(color: Colors.white70, fontSize: 9),
                             ),
                             const SizedBox(width: 8),
@@ -719,7 +722,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                             Icon(Icons.explore, color: Colors.white70, size: 10),
                             const SizedBox(width: 2),
                             Text(
-                              '${_course.toStringAsFixed(0)}°',
+                              '${_course.toStringAsFixed(widget.config.decimalPlaces)}°',
                               style: const TextStyle(color: Colors.white70, fontSize: 9),
                             ),
                             const SizedBox(width: 8),
@@ -1419,72 +1422,75 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
       ),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentPosition,
-              initialZoom: 16.0,
-              onMapReady: () {
-                _mapReady = true;
-              },
-              onPositionChanged: (position, hasGesture) {
-                if (hasGesture) {
-                  // User interacted with map, disable auto-follow
-                  setState(() {
-                    _followMode = false;
-                  });
-                }
-              },
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.valiotdashboard',
-                maxZoom: 19,
+          Hero(
+            tag: '${widget.config.id}_map',
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _currentPosition,
+                initialZoom: 16.0,
+                onMapReady: () {
+                  _mapReady = true;
+                },
+                onPositionChanged: (position, hasGesture) {
+                  if (hasGesture) {
+                    // User interacted with map, disable auto-follow
+                    setState(() {
+                      _followMode = false;
+                    });
+                  }
+                },
               ),
-              
-              // Path polyline - untuk tracking atau playback
-              if ((_isMovingMode && _path.length > 1) || (_isPlayingHistory && _historyPath.length > 1))
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _isPlayingHistory ? _historyPath : _path,
-                      color: _isPlayingHistory 
-                          ? widget.config.color.withOpacity(0.6) 
-                          : widget.config.color,
-                      strokeWidth: 5.0,
-                    ),
-                  ],
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.valiotdashboard',
+                  maxZoom: 19,
                 ),
-              
-              // History path trail saat playback
-              if (_isPlayingHistory && _playbackIndex > 0)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _historyPath.sublist(0, _playbackIndex + 1),
-                      color: widget.config.color,
-                      strokeWidth: 6.0,
-                    ),
-                  ],
-                ),
-              
-              // Marker - posisi berdasarkan mode (live atau playback)
-              if (_hasReceivedData || _isPlayingHistory)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _isPlayingHistory ? _playbackPosition : _currentPosition,
-                      width: 64,
-                      height: 64,
-                      child: Transform.rotate(
-                        angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
-                        child: _buildMarkerWidget(),
+                
+                // Path polyline - untuk tracking atau playback
+                if ((_isMovingMode && _path.length > 1) || (_isPlayingHistory && _historyPath.length > 1))
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _isPlayingHistory ? _historyPath : _path,
+                        color: _isPlayingHistory 
+                            ? widget.config.color.withOpacity(0.6) 
+                            : widget.config.color,
+                        strokeWidth: 5.0,
                       ),
-                    ),
-                  ],
-                ),
-            ],
+                    ],
+                  ),
+                
+                // History path trail saat playback
+                if (_isPlayingHistory && _playbackIndex > 0)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _historyPath.sublist(0, _playbackIndex + 1),
+                        color: widget.config.color,
+                        strokeWidth: 6.0,
+                      ),
+                    ],
+                  ),
+                
+                // Marker - posisi berdasarkan mode (live atau playback)
+                if (_hasReceivedData || _isPlayingHistory)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _isPlayingHistory ? _playbackPosition : _currentPosition,
+                        width: 64,
+                        height: 64,
+                        child: Transform.rotate(
+                          angle: (_isMovingMode || _isPlayingHistory) ? (_course * 3.14159265359 / 180) : 0,
+                          child: _buildMarkerWidget(),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
           
           // GPS Info display - Full details
@@ -1589,21 +1595,21 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                       // Speed
                       _buildInfoChip(
                         icon: Icons.speed,
-                        label: '${_speedKmh.toStringAsFixed(1)} km/h',
+                        label: '${_speedKmh.toStringAsFixed(widget.config.decimalPlaces)} km/h',
                         color: _speedKmh > 50 ? Colors.red : (_speedKmh > 20 ? Colors.orange : Colors.green),
                       ),
                       const SizedBox(width: 8),
                       // Heading
                       _buildInfoChip(
                         icon: Icons.explore,
-                        label: '${_course.toStringAsFixed(0)}°',
+                        label: '${_course.toStringAsFixed(widget.config.decimalPlaces)}°',
                         color: widget.config.color,
                       ),
                       const SizedBox(width: 8),
                       // Altitude
                       _buildInfoChip(
                         icon: Icons.terrain,
-                        label: '${_altitude.toStringAsFixed(1)} m',
+                        label: '${_altitude.toStringAsFixed(widget.config.decimalPlaces)} m',
                         color: Colors.blue,
                       ),
                       const SizedBox(width: 8),

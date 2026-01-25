@@ -243,7 +243,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   ValueTransition(
-                                    value: _currentValue.toStringAsFixed(1),
+                                    value: _currentValue.toStringAsFixed(widget.config.decimalPlaces),
                                     style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,

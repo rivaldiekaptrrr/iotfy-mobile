@@ -202,7 +202,7 @@ class _LiquidTankPanelState extends ConsumerState<LiquidTankPanel>
                           return FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              value.toStringAsFixed(1),
+                              value.toStringAsFixed(widget.config.decimalPlaces),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 24,

@@ -44,13 +44,14 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       isJsonPayload: fields[24] as bool,
       jsonPath: fields[25] as String?,
       jsonPattern: fields[26] as String?,
+      decimalPlaces: fields[27] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, PanelWidgetConfig obj) {
     writer
-      ..writeByte(27)
+      ..writeByte(28)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -104,7 +105,9 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       ..writeByte(25)
       ..write(obj.jsonPath)
       ..writeByte(26)
-      ..write(obj.jsonPattern);
+      ..write(obj.jsonPattern)
+      ..writeByte(27)
+      ..write(obj.decimalPlaces);
   }
 
   @override

@@ -194,7 +194,7 @@ class _KPIPanelState extends ConsumerState<KPIPanel>
                               builder: (context, value, child) {
                                 return Text(
                                   _lastValue != null
-                                      ? value.toStringAsFixed(1)
+                                      ? value.toStringAsFixed(widget.config.decimalPlaces)
                                       : _lastPayload ?? '-',
                                   style: theme.textTheme.headlineMedium
                                       ?.copyWith(

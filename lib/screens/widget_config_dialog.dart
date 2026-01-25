@@ -35,6 +35,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   bool _colorInitializedFromTheme = false;
   int? _mapMarkerIcon;  // 1-21 untuk icon pack Map Tracker
   bool _isJsonPayload = false;
+  int _decimalPlaces = 1; // 0 = integer, 1-2 = float
 
   @override
   void initState() {
@@ -60,6 +61,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
       _selectedIconCodePoint = widget.initialConfig!.iconCodePoint;
       _mapMarkerIcon = widget.initialConfig!.mapMarkerIcon;
       _isJsonPayload = widget.initialConfig!.isJsonPayload;
+      _decimalPlaces = widget.initialConfig!.decimalPlaces;
     } else if (widget.preSelectedType != null) {
       _selectedType = widget.preSelectedType!;
     }
@@ -372,6 +374,46 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         border: OutlineInputBorder(),
                         hintText: '°C, %, etc.',
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Decimal Places Selector
+                    Row(
+                      children: [
+                        const Text('Number Format: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                        const SizedBox(width: 8), // Reduced spacing
+                        Expanded(
+                          child: SegmentedButton<int>(
+                            segments: const [
+                              ButtonSegment(
+                                value: 0, 
+                                label: Text('123'), 
+                                tooltip: 'Integer (No decimals)',
+                              ),
+                              ButtonSegment(
+                                value: 1, 
+                                label: Text('123.4'), 
+                                tooltip: '1 Decimal Place',
+                              ),
+                              ButtonSegment(
+                                value: 2, 
+                                label: Text('123.45'), 
+                                tooltip: '2 Decimal Places',
+                              ),
+                            ],
+                            selected: {_decimalPlaces},
+                            onSelectionChanged: (Set<int> newSelection) {
+                              setState(() {
+                                _decimalPlaces = newSelection.first;
+                              });
+                            },
+                            showSelectedIcon: false, // Save space
+                            style: ButtonStyle(
+                              visualDensity: VisualDensity.compact, // Reduce height
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -878,6 +920,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         isJsonPayload: _isJsonPayload,
         jsonPath: _isJsonPayload ? _jsonPathController.text : null,
         jsonPattern: _isJsonPayload ? _jsonPatternController.text : null,
+        decimalPlaces: _decimalPlaces,
         x: widget.initialConfig?.x ?? 0,
         y: widget.initialConfig?.y ?? 0,
         width: widget.initialConfig?.width ?? 1,

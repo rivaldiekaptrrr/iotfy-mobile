@@ -59,6 +59,7 @@ class PanelWidgetConfig extends HiveObject {
   @HiveField(24) bool isJsonPayload;
   @HiveField(25) String? jsonPath; // For Subscribe
   @HiveField(26) String? jsonPattern; // For Publish
+  @HiveField(27) int decimalPlaces; // 0 = integer, 1-2 = float precision
 
   PanelWidgetConfig({
     String? id,
@@ -88,6 +89,7 @@ class PanelWidgetConfig extends HiveObject {
     this.isJsonPayload = false,
     this.jsonPath,
     this.jsonPattern,
+    this.decimalPlaces = 1,
   }) : id = id ?? const Uuid().v4();
 
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
@@ -124,6 +126,7 @@ class PanelWidgetConfig extends HiveObject {
     bool? isJsonPayload,
     String? jsonPath,
     String? jsonPattern,
+    int? decimalPlaces,
   }) {
     return PanelWidgetConfig(
       id: id,
@@ -153,6 +156,7 @@ class PanelWidgetConfig extends HiveObject {
       isJsonPayload: isJsonPayload ?? this.isJsonPayload,
       jsonPath: jsonPath ?? this.jsonPath,
       jsonPattern: jsonPattern ?? this.jsonPattern,
+      decimalPlaces: decimalPlaces ?? this.decimalPlaces,
     );
   }
 }
