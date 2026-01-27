@@ -27,11 +27,14 @@ class MqttService {
   final Duration _baseReconnectDelay = const Duration(seconds: 2);
   final Duration _maxReconnectDelay = const Duration(seconds: 30);
 
-  final _connectionStatusController = StreamController<ConnectionStatus>.broadcast();
-  final _messageController = StreamController<app_mqtt.MqttMessageData>.broadcast();
+  final _connectionStatusController =
+      StreamController<ConnectionStatus>.broadcast();
+  final _messageController =
+      StreamController<app_mqtt.MqttMessageData>.broadcast();
   final _logController = StreamController<List<MqttLogEntry>>.broadcast();
 
-  Stream<ConnectionStatus> get connectionStatus => _connectionStatusController.stream;
+  Stream<ConnectionStatus> get connectionStatus =>
+      _connectionStatusController.stream;
   Stream<app_mqtt.MqttMessageData> get messages => _messageController.stream;
   Stream<List<MqttLogEntry>> get logs => _logController.stream;
 
@@ -41,9 +44,10 @@ class MqttService {
   bool _autoReconnect = true;
   String? _lastError;
   String? get lastError => _lastError;
+  BrokerConfig? get currentConfig => _currentConfig;
   final List<MqttLogEntry> _logBuffer = [];
   static const int _maxLogEntries = 100;
-  
+
   // Direct access to log buffer (no stream waiting)
   List<MqttLogEntry> get logBuffer => List.unmodifiable(_logBuffer);
 
@@ -51,7 +55,9 @@ class MqttService {
     _status = status;
     _lastError = error;
     _connectionStatusController.add(status);
-    final level = status == ConnectionStatus.error ? MqttLogLevel.error : MqttLogLevel.info;
+    final level = status == ConnectionStatus.error
+        ? MqttLogLevel.error
+        : MqttLogLevel.info;
     _addLog('Status: $status${error != null ? ' ($error)' : ''}', level: level);
   }
 
@@ -61,11 +67,15 @@ class MqttService {
       _currentConfig = config;
       _reconnectAttempts = 0;
       _updateStatus(ConnectionStatus.connecting);
-      _addLog('Connecting to ${config.host}:${config.port} (ssl=${config.useSsl})');
+      _addLog(
+        'Connecting to ${config.host}:${config.port} (ssl=${config.useSsl})',
+      );
 
       await disconnect();
 
-      final clientId = config.clientId ?? 'flutter_mqtt_${DateTime.now().millisecondsSinceEpoch}';
+      final clientId =
+          config.clientId ??
+          'flutter_mqtt_${DateTime.now().millisecondsSinceEpoch}';
       _client = MqttServerClient.withPort(config.host, clientId, config.port);
 
       // Configure client settings
@@ -81,7 +91,8 @@ class MqttService {
 
       if (config.useSsl) {
         _client!.securityContext = SecurityContext.defaultContext;
-        _client!.onBadCertificate = (dynamic certificate) => true; // Accept self-signed certificates
+        _client!.onBadCertificate = (dynamic certificate) =>
+            true; // Accept self-signed certificates
       }
 
       // Create connection message
@@ -118,7 +129,8 @@ class MqttService {
         _addLog('Connected and listening for messages');
         return true;
       } else {
-        final errorMsg = 'Connection failed: ${_client!.connectionStatus!.returnCode}';
+        final errorMsg =
+            'Connection failed: ${_client!.connectionStatus!.returnCode}';
         _updateStatus(ConnectionStatus.error, errorMsg);
         _addLog(errorMsg, level: MqttLogLevel.error);
         if (_autoReconnect) {
@@ -141,12 +153,13 @@ class MqttService {
     _client?.updates?.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
       for (final message in messages) {
         final recMess = message.payload as MqttPublishMessage;
-        final payload = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+        final payload = MqttPublishPayload.bytesToStringAsString(
+          recMess.payload.message,
+        );
 
-        _messageController.add(app_mqtt.MqttMessageData(
-          topic: message.topic,
-          payload: payload,
-        ));
+        _messageController.add(
+          app_mqtt.MqttMessageData(topic: message.topic, payload: payload),
+        );
         _addLog('Recv ${message.topic}: $payload');
       }
     });
@@ -210,11 +223,21 @@ class MqttService {
     }
   }
 
-  void publish(String topic, String payload, {int qos = 0, bool retain = false}) {
+  void publish(
+    String topic,
+    String payload, {
+    int qos = 0,
+    bool retain = false,
+  }) {
     if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       builder.addString(payload);
-      _client!.publishMessage(topic, MqttQos.values[qos], builder.payload!, retain: retain);
+      _client!.publishMessage(
+        topic,
+        MqttQos.values[qos],
+        builder.payload!,
+        retain: retain,
+      );
       _addLog('Publish $topic: $payload (qos=$qos, retain=$retain)');
     }
   }
@@ -229,7 +252,9 @@ class MqttService {
 
   void _addLog(String message, {MqttLogLevel level = MqttLogLevel.info}) {
     if (_logController.isClosed) return;
-    _logBuffer.add(MqttLogEntry(time: DateTime.now(), level: level, message: message));
+    _logBuffer.add(
+      MqttLogEntry(time: DateTime.now(), level: level, message: message),
+    );
     if (_logBuffer.length > _maxLogEntries) {
       _logBuffer.removeAt(0);
     }

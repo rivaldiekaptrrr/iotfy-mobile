@@ -35,28 +35,27 @@ void main() async {
   // Request notification permission for Android 13+
   await _requestNotificationPermission();
 
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 Future<void> _requestNotificationPermission() async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
-  
+
   // Request permission on Android 13+ (API 33+)
   final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
   if (androidImplementation != null) {
-    final bool? granted = await androidImplementation.requestNotificationsPermission();
+    final bool? granted = await androidImplementation
+        .requestNotificationsPermission();
     print('[PERMISSION] Notification permission: ${granted ?? false}');
   }
 }
-  
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -65,145 +64,162 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: 'IoT MQTT Panel',
       debugShowCheckedModeBanner: false,
-        theme: ThemeData(
+      theme: ThemeData(
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF3B82F6), // Blue 500
-          primary: const Color(0xFF2563EB), // Blue 600
-          secondary: const Color(0xFF64748B), // Slate 500
-          surface: const Color(0xFFF1F5F9), // Slate 100
+          seedColor: const Color(0xFF6366F1), // Indigo
+          primary: const Color(0xFF4F46E5), // Indigo 600
+          secondary: const Color(0xFF0EA5E9), // Sky 500
+          surface: const Color(0xFFF8FAFC), // Slate 50
           onSurface: const Color(0xFF1E293B), // Slate 800
           surfaceContainerHighest: const Color(0xFFE2E8F0), // Slate 200
+          outline: const Color(0xFFCBD5E1),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC), // Slate 50
-        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF1F5F9), // Slate 100
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF8FAFC), // Slate 50
+          backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           centerTitle: false,
           titleTextStyle: TextStyle(
-            color: Color(0xFF0F172A), // Slate 900
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
+            fontFamily: 'Plus Jakarta Sans', // Fallback handled by system
           ),
-          iconTheme: IconThemeData(color: Color(0xFF334155)), // Slate 700
+          iconTheme: IconThemeData(color: Color(0xFF1E293B)),
         ),
         cardTheme: CardThemeData(
           color: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1), // Slate 200
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
           ),
           margin: EdgeInsets.zero,
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFCBD5E1)), // Slate 300
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)), // Slate 200
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5), // Blue 500
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(
+          displayLarge: TextStyle(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1.0,
+            color: Color(0xFF1E293B),
+          ),
+          displayMedium: TextStyle(
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: Color(0xFF0F172A),
+            color: Color(0xFF1E293B),
+          ),
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+            color: Color(0xFF1E293B),
           ),
           titleMedium: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
             color: Color(0xFF1E293B),
-            letterSpacing: -0.2,
+          ),
+          bodyLarge: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: Color(0xFF334155),
           ),
           bodyMedium: TextStyle(
+            fontWeight: FontWeight.w400,
             fontSize: 14,
-            color: Color(0xFF334155), // Slate 700
-            height: 1.4,
-          ),
-          labelMedium: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B), // Slate 500
+            color: Color(0xFF475569),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2563EB),
+            backgroundColor: const Color(0xFF4F46E5),
             foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            elevation: 4,
+            shadowColor: const Color(0x404F46E5),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
           ),
         ),
       ),
       darkTheme: ThemeData(
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF3B82F6), // Blue 500
-          primary: const Color(0xFF60A5FA), // Blue 400
-          secondary: const Color(0xFF94A3B8), // Slate 400
+          seedColor: const Color(0xFF6366F1),
+          primary: const Color(0xFF818CF8), // Indigo 400
+          secondary: const Color(0xFF38BDF8), // Sky 400
           surface: const Color(0xFF0F172A), // Slate 900
           onSurface: const Color(0xFFF8FAFC), // Slate 50
           surfaceContainerHighest: const Color(0xFF1E293B), // Slate 800
+          outline: const Color(0xFF334155),
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
-        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(
+          0xFF020617,
+        ), // Slate 950 (Deep Dark)
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           centerTitle: false,
           titleTextStyle: TextStyle(
             color: Color(0xFFF8FAFC),
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
+            fontFamily: 'Plus Jakarta Sans',
           ),
           iconTheme: IconThemeData(color: Color(0xFF94A3B8)),
         ),
         cardTheme: CardThemeData(
-          color: const Color(0xFF1E293B), // Slate 800
+          color: const Color(0xFF1E293B),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF334155), width: 1), // Slate 700
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFF334155), width: 1),
           ),
           margin: EdgeInsets.zero,
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFF1E293B), // Slate 800
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF334155)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF334155)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF60A5FA), width: 1.5),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(
+          displayLarge: TextStyle(
             fontWeight: FontWeight.w800,
+            letterSpacing: -1.0,
+            color: Color(0xFFF8FAFC),
+          ),
+          displayMedium: TextStyle(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            color: Color(0xFFF8FAFC),
+          ),
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.w700,
             letterSpacing: -0.5,
             color: Color(0xFFF8FAFC),
           ),
@@ -211,27 +227,52 @@ class MyApp extends ConsumerWidget {
             fontWeight: FontWeight.w600,
             fontSize: 16,
             color: Color(0xFFF1F5F9),
-            letterSpacing: -0.2,
+          ),
+          bodyLarge: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: Color(0xFFCBD5E1),
           ),
           bodyMedium: TextStyle(
+            fontWeight: FontWeight.w400,
             fontSize: 14,
-            color: Color(0xFFCBD5E1), // Slate 300
-            height: 1.4,
-          ),
-          labelMedium: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF94A3B8), // Slate 400
+            color: Color(0xFF94A3B8),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF3B82F6),
+            backgroundColor: const Color(0xFF6366F1),
             foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            elevation: 4,
+            shadowColor: const Color(0x406366F1),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF0F172A),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF334155)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF334155)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF818CF8), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
           ),
         ),
       ),
@@ -240,4 +281,3 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
-
