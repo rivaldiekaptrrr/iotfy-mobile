@@ -172,6 +172,8 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         return WidgetType.keypad;
       case 21:
         return WidgetType.iconMatrix;
+      case 22:
+        return WidgetType.textInput;
       default:
         return WidgetType.toggle;
     }
@@ -245,6 +247,9 @@ class WidgetTypeAdapter extends TypeAdapter<WidgetType> {
         break;
       case WidgetType.iconMatrix:
         writer.writeByte(21);
+        break;
+      case WidgetType.textInput:
+        writer.writeByte(22);
         break;
     }
   }

@@ -9,10 +9,7 @@ class WidgetCatalogScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Widget'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Add Widget'), centerTitle: true),
       body: GridView.count(
         padding: const EdgeInsets.all(16),
         crossAxisCount: 2,
@@ -34,6 +31,7 @@ class WidgetCatalogScreen extends StatelessWidget {
             Icons.tune,
             Icons.radio_button_checked,
             Icons.gamepad,
+            Icons.keyboard,
           ]),
           _buildCategoryCard(context, WidgetCategory.maps, [
             Icons.map,
@@ -88,7 +86,9 @@ class WidgetCatalogScreen extends StatelessWidget {
                   Icon(
                     Icons.info_outline,
                     size: 16,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryContainer.withOpacity(0.5),
                   ),
                 ],
               ),
@@ -103,29 +103,39 @@ class WidgetCatalogScreen extends StatelessWidget {
                   runSpacing: 12,
                   alignment: WrapAlignment.center,
                   runAlignment: WrapAlignment.center,
-                  children: previewIcons.map((icon) => Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Theme.of(context).dividerColor.withOpacity(0.5),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                  children: previewIcons
+                      .map(
+                        (icon) => Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.5),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            icon,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.7),
+                            size: 20,
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Icon(
-                      icon,
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                      size: 20,
-                    ),
-                  )).toList(),
+                      )
+                      .toList(),
                 ),
               ),
             ),
@@ -137,7 +147,9 @@ class WidgetCatalogScreen extends StatelessWidget {
 
   void _showWidgetSelection(BuildContext context, WidgetCategory category) {
     // Get all widgets for this category
-    final widgets = WidgetType.values.where((type) => WidgetCategoryHelper.getCategory(type) == category).toList();
+    final widgets = WidgetType.values
+        .where((type) => WidgetCategoryHelper.getCategory(type) == category)
+        .toList();
 
     showModalBottomSheet(
       context: context,
@@ -163,7 +175,10 @@ class WidgetCatalogScreen extends StatelessWidget {
             Expanded(
               child: ListView.separated(
                 controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 itemCount: widgets.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
@@ -246,7 +261,7 @@ class WidgetCatalogScreen extends StatelessWidget {
         icon = Icons.explore;
         description = 'Direction indicator';
         break;
-        
+
       // Controlling
       case WidgetType.toggle:
         name = 'Toggle Switch';
@@ -288,7 +303,12 @@ class WidgetCatalogScreen extends StatelessWidget {
         icon = Icons.dialpad;
         description = 'Numeric keypad input';
         break;
-        
+      case WidgetType.textInput:
+        name = 'Text Input';
+        icon = Icons.keyboard;
+        description = 'Send text commands';
+        break;
+
       // Others
       case WidgetType.iconMatrix:
         name = 'Icon Matrix';

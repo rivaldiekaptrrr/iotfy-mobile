@@ -6,7 +6,11 @@ class WidgetConfigDialog extends StatefulWidget {
   final PanelWidgetConfig? initialConfig;
   final WidgetType? preSelectedType;
 
-  const WidgetConfigDialog({super.key, this.initialConfig, this.preSelectedType});
+  const WidgetConfigDialog({
+    super.key,
+    this.initialConfig,
+    this.preSelectedType,
+  });
 
   @override
   State<WidgetConfigDialog> createState() => _WidgetConfigDialogState();
@@ -33,26 +37,52 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   Color _selectedColor = Colors.blue;
   int? _selectedIconCodePoint;
   bool _colorInitializedFromTheme = false;
-  int? _mapMarkerIcon;  // 1-21 untuk icon pack Map Tracker
+  int? _mapMarkerIcon; // 1-21 untuk icon pack Map Tracker
   bool _isJsonPayload = false;
   int _decimalPlaces = 1; // 0 = integer, 1-2 = float
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.initialConfig?.title ?? '');
-    _subscribeTopicController = TextEditingController(text: widget.initialConfig?.subscribeTopic ?? '');
-    _publishTopicController = TextEditingController(text: widget.initialConfig?.publishTopic ?? '');
-    _onPayloadController = TextEditingController(text: widget.initialConfig?.onPayload ?? 'ON');
-    _offPayloadController = TextEditingController(text: widget.initialConfig?.offPayload ?? 'OFF');
-    _minValueController = TextEditingController(text: widget.initialConfig?.minValue?.toString() ?? '0');
-    _maxValueController = TextEditingController(text: widget.initialConfig?.maxValue?.toString() ?? '100');
-    _unitController = TextEditingController(text: widget.initialConfig?.unit ?? '');
-    _warningThresholdController = TextEditingController(text: widget.initialConfig?.warningThreshold?.toString() ?? '');
-    _criticalThresholdController = TextEditingController(text: widget.initialConfig?.criticalThreshold?.toString() ?? '');
-    _optionsController = TextEditingController(text: widget.initialConfig?.options?.join(',') ?? '');
-    _jsonPathController = TextEditingController(text: widget.initialConfig?.jsonPath ?? '');
-    _jsonPatternController = TextEditingController(text: widget.initialConfig?.jsonPattern ?? '');
+    _titleController = TextEditingController(
+      text: widget.initialConfig?.title ?? '',
+    );
+    _subscribeTopicController = TextEditingController(
+      text: widget.initialConfig?.subscribeTopic ?? '',
+    );
+    _publishTopicController = TextEditingController(
+      text: widget.initialConfig?.publishTopic ?? '',
+    );
+    _onPayloadController = TextEditingController(
+      text: widget.initialConfig?.onPayload ?? 'ON',
+    );
+    _offPayloadController = TextEditingController(
+      text: widget.initialConfig?.offPayload ?? 'OFF',
+    );
+    _minValueController = TextEditingController(
+      text: widget.initialConfig?.minValue?.toString() ?? '0',
+    );
+    _maxValueController = TextEditingController(
+      text: widget.initialConfig?.maxValue?.toString() ?? '100',
+    );
+    _unitController = TextEditingController(
+      text: widget.initialConfig?.unit ?? '',
+    );
+    _warningThresholdController = TextEditingController(
+      text: widget.initialConfig?.warningThreshold?.toString() ?? '',
+    );
+    _criticalThresholdController = TextEditingController(
+      text: widget.initialConfig?.criticalThreshold?.toString() ?? '',
+    );
+    _optionsController = TextEditingController(
+      text: widget.initialConfig?.options?.join(',') ?? '',
+    );
+    _jsonPathController = TextEditingController(
+      text: widget.initialConfig?.jsonPath ?? '',
+    );
+    _jsonPatternController = TextEditingController(
+      text: widget.initialConfig?.jsonPattern ?? '',
+    );
 
     if (widget.initialConfig != null) {
       _selectedType = widget.initialConfig!.type;
@@ -136,9 +166,9 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: IconButton(
-                           icon: const Icon(Icons.help_outline),
-                           onPressed: () => _showHelpDialog(context),
-                           tooltip: 'How to use this widget',
+                          icon: const Icon(Icons.help_outline),
+                          onPressed: () => _showHelpDialog(context),
+                          tooltip: 'How to use this widget',
                         ),
                       ),
                     ],
@@ -168,12 +198,15 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         hintText: 'sensor/temperature',
                       ),
                       validator: (value) {
-                        bool isOptional = _selectedType == WidgetType.toggle || 
-                                          _selectedType == WidgetType.button || 
-                                          _selectedType == WidgetType.slider || 
-                                          _selectedType == WidgetType.knob;
-                        
-                        if (!isOptional && _needsSubscribeTopic() && (value == null || value.isEmpty)) {
+                        bool isOptional =
+                            _selectedType == WidgetType.toggle ||
+                            _selectedType == WidgetType.button ||
+                            _selectedType == WidgetType.slider ||
+                            _selectedType == WidgetType.knob;
+
+                        if (!isOptional &&
+                            _needsSubscribeTopic() &&
+                            (value == null || value.isEmpty)) {
                           return 'Subscribe topic wajib diisi';
                         }
                         return null;
@@ -189,58 +222,61 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         hintText: 'device/switch',
                       ),
                       validator: (value) {
-                        if (_needsPublishTopic() && (value == null || value.isEmpty)) {
+                        if (_needsPublishTopic() &&
+                            (value == null || value.isEmpty)) {
                           return 'Please enter a publish topic';
                         }
                         return null;
                       },
                     ),
                   if (_needsPublishTopic() || _needsSubscribeTopic()) ...[
-                     const SizedBox(height: 8),
-                     Row(
-                        children: [
-                          Expanded(
-                            child: SwitchListTile(
-                              title: const Text('Enable JSON Data'),
-                              subtitle: const Text('Parse or send data in JSON format'),
-                              value: _isJsonPayload,
-                              onChanged: (val) {
-                                setState(() {
-                                  _isJsonPayload = val;
-                                });
-                              },
-                              contentPadding: EdgeInsets.zero,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SwitchListTile(
+                            title: const Text('Enable JSON Data'),
+                            subtitle: const Text(
+                              'Parse or send data in JSON format',
                             ),
+                            value: _isJsonPayload,
+                            onChanged: (val) {
+                              setState(() {
+                                _isJsonPayload = val;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.info_outline),
-                            tooltip: 'JSON Documentation',
-                            onPressed: () => _showJsonHelpDialog(context),
-                          )
-                        ],
-                     ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.info_outline),
+                          tooltip: 'JSON Documentation',
+                          onPressed: () => _showJsonHelpDialog(context),
+                        ),
+                      ],
+                    ),
                   ],
                   if (_isJsonPayload) ...[
-                     if (_needsSubscribeTopic())
-                        TextFormField(
-                          controller: _jsonPathController,
-                          decoration: const InputDecoration(
-                            labelText: 'JsonPath for Subscribe',
-                            hintText: r'$.store.book[0].title',
-                            border: OutlineInputBorder(),
-                          ),
+                    if (_needsSubscribeTopic())
+                      TextFormField(
+                        controller: _jsonPathController,
+                        decoration: const InputDecoration(
+                          labelText: 'JsonPath for Subscribe',
+                          hintText: r'$.store.book[0].title',
+                          border: OutlineInputBorder(),
                         ),
-                     if (_needsSubscribeTopic()) const SizedBox(height: 8),
-                     if (_needsPublishTopic())
-                        TextFormField(
-                           controller: _jsonPatternController,
-                           decoration: const InputDecoration(
-                              labelText: 'JSON Pattern for Publish',
-                              hintText: r'{"data": <value>}',
-                              border: OutlineInputBorder(),
-                           ),
+                      ),
+                    if (_needsSubscribeTopic()) const SizedBox(height: 8),
+                    if (_needsPublishTopic())
+                      TextFormField(
+                        controller: _jsonPatternController,
+                        decoration: const InputDecoration(
+                          labelText: 'JSON Pattern for Publish',
+                          hintText: r'{"data": <value>}',
+                          border: OutlineInputBorder(),
                         ),
-                     if (_needsPublishTopic()) const SizedBox(height: 8),
+                      ),
+                    if (_needsPublishTopic()) const SizedBox(height: 8),
                   ],
                   if (_needsOptions())
                     TextFormField(
@@ -251,12 +287,13 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         hintText: 'Low,Med,High or S1,S2,S3',
                       ),
                       validator: (value) {
-                         // Optional or required?
-                         return null;
+                        // Optional or required?
+                        return null;
                       },
                     ),
                   if (_needsOptions()) const SizedBox(height: 16),
-                  if (_selectedType == WidgetType.toggle && !_isJsonPayload) ...[
+                  if (_selectedType == WidgetType.toggle &&
+                      !_isJsonPayload) ...[
                     Row(
                       children: [
                         Expanded(
@@ -294,7 +331,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.button && !_isJsonPayload) ...[
+                  if (_selectedType == WidgetType.button &&
+                      !_isJsonPayload) ...[
                     TextFormField(
                       controller: _onPayloadController,
                       decoration: const InputDecoration(
@@ -310,7 +348,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.statusIndicator && !_isJsonPayload) ...[
+                  if (_selectedType == WidgetType.statusIndicator &&
+                      !_isJsonPayload) ...[
                     Row(
                       children: [
                         Expanded(
@@ -338,9 +377,17 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart || _selectedType == WidgetType.slider || _selectedType == WidgetType.barChart || _selectedType == WidgetType.kpiCard || 
-                      _selectedType == WidgetType.liquidTank || _selectedType == WidgetType.radialGauge || _selectedType == WidgetType.knob || _selectedType == WidgetType.battery ||
-                      _selectedType == WidgetType.linearGauge || _selectedType == WidgetType.compass) ...[
+                  if (_selectedType == WidgetType.gauge ||
+                      _selectedType == WidgetType.lineChart ||
+                      _selectedType == WidgetType.slider ||
+                      _selectedType == WidgetType.barChart ||
+                      _selectedType == WidgetType.kpiCard ||
+                      _selectedType == WidgetType.liquidTank ||
+                      _selectedType == WidgetType.radialGauge ||
+                      _selectedType == WidgetType.knob ||
+                      _selectedType == WidgetType.battery ||
+                      _selectedType == WidgetType.linearGauge ||
+                      _selectedType == WidgetType.compass) ...[
                     Row(
                       children: [
                         Expanded(
@@ -379,24 +426,27 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     // Decimal Places Selector
                     Row(
                       children: [
-                        const Text('Number Format: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                        const Text(
+                          'Number Format: ',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
                         const SizedBox(width: 8), // Reduced spacing
                         Expanded(
                           child: SegmentedButton<int>(
                             segments: const [
                               ButtonSegment(
-                                value: 0, 
-                                label: Text('123'), 
+                                value: 0,
+                                label: Text('123'),
                                 tooltip: 'Integer (No decimals)',
                               ),
                               ButtonSegment(
-                                value: 1, 
-                                label: Text('123.4'), 
+                                value: 1,
+                                label: Text('123.4'),
                                 tooltip: '1 Decimal Place',
                               ),
                               ButtonSegment(
-                                value: 2, 
-                                label: Text('123.45'), 
+                                value: 2,
+                                label: Text('123.45'),
                                 tooltip: '2 Decimal Places',
                               ),
                             ],
@@ -408,7 +458,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                             },
                             showSelectedIcon: false, // Save space
                             style: ButtonStyle(
-                              visualDensity: VisualDensity.compact, // Reduce height
+                              visualDensity:
+                                  VisualDensity.compact, // Reduce height
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
@@ -417,7 +468,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (_selectedType == WidgetType.gauge || _selectedType == WidgetType.lineChart) ...[
+                  if (_selectedType == WidgetType.gauge ||
+                      _selectedType == WidgetType.lineChart) ...[
                     Row(
                       children: [
                         Expanded(
@@ -456,9 +508,10 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                         const SizedBox(height: 4),
                         Text(
                           'Pilih icon yang akan ditampilkan saat mode realtime',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).disabledColor,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).disabledColor,
+                              ),
                         ),
                         const SizedBox(height: 8),
                         SizedBox(
@@ -472,7 +525,9 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                               return GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    _mapMarkerIcon = isSelected ? null : iconNumber;
+                                    _mapMarkerIcon = isSelected
+                                        ? null
+                                        : iconNumber;
                                   });
                                 },
                                 child: Container(
@@ -480,12 +535,14 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                                   height: 64,
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
-                                    color: isSelected 
-                                        ? _selectedColor.withOpacity(0.2) 
+                                    color: isSelected
+                                        ? _selectedColor.withOpacity(0.2)
                                         : Colors.grey.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: isSelected ? _selectedColor : Colors.grey.withOpacity(0.3),
+                                      color: isSelected
+                                          ? _selectedColor
+                                          : Colors.grey.withOpacity(0.3),
                                       width: isSelected ? 3 : 1,
                                     ),
                                   ),
@@ -494,17 +551,20 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                                     child: Image.asset(
                                       'assets/icon/$iconNumber.png',
                                       fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Center(
-                                          child: Text(
-                                            '$iconNumber',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: isSelected ? _selectedColor : Colors.grey,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Center(
+                                              child: Text(
+                                                '$iconNumber',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isSelected
+                                                      ? _selectedColor
+                                                      : Colors.grey,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                     ),
                                   ),
                                 ),
@@ -534,9 +594,18 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 0, child: Text('0 - At most once')),
-                      DropdownMenuItem(value: 1, child: Text('1 - At least once')),
-                      DropdownMenuItem(value: 2, child: Text('2 - Exactly once')),
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text('0 - At most once'),
+                      ),
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text('1 - At least once'),
+                      ),
+                      DropdownMenuItem(
+                        value: 2,
+                        child: Text('2 - Exactly once'),
+                      ),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -553,34 +622,49 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.teal, Colors.pink, Colors.indigo].map((color) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedColor = color;
-                              });
-                            },
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: _selectedColor == color ? Colors.black : Colors.transparent,
-                                  width: 3,
+                        children:
+                            [
+                              Colors.blue,
+                              Colors.green,
+                              Colors.orange,
+                              Colors.red,
+                              Colors.purple,
+                              Colors.teal,
+                              Colors.pink,
+                              Colors.indigo,
+                            ].map((color) {
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedColor = color;
+                                  });
+                                },
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _selectedColor == color
+                                          ? Colors.black
+                                          : Colors.transparent,
+                                      width: 3,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   _buildPreviewCard(),
                   const SizedBox(height: 16),
-                  if (_selectedType == WidgetType.toggle || _selectedType == WidgetType.button || _selectedType == WidgetType.statusIndicator || _selectedType == WidgetType.kpiCard) ...[
+                  if (_selectedType == WidgetType.toggle ||
+                      _selectedType == WidgetType.button ||
+                      _selectedType == WidgetType.statusIndicator ||
+                      _selectedType == WidgetType.kpiCard) ...[
                     const Text('Icon (optional):'),
                     const SizedBox(height: 8),
                     Wrap(
@@ -632,24 +716,26 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         _selectedType == WidgetType.knob ||
         _selectedType == WidgetType.linearGauge ||
         _selectedType == WidgetType.compass ||
+        _selectedType == WidgetType.text ||
+        _selectedType == WidgetType.textInput ||
         _selectedType == WidgetType.iconMatrix;
   }
 
   bool _needsPublishTopic() {
-    return _selectedType == WidgetType.toggle || 
-           _selectedType == WidgetType.button ||
-           _selectedType == WidgetType.slider ||
-           _selectedType == WidgetType.knob ||
-           _selectedType == WidgetType.segmentedSwitch ||
-           _selectedType == WidgetType.joystick ||
-           _selectedType == WidgetType.keypad;
+    return _selectedType == WidgetType.toggle ||
+        _selectedType == WidgetType.button ||
+        _selectedType == WidgetType.slider ||
+        _selectedType == WidgetType.knob ||
+        _selectedType == WidgetType.segmentedSwitch ||
+        _selectedType == WidgetType.joystick ||
+        _selectedType == WidgetType.textInput ||
+        _selectedType == WidgetType.keypad;
   }
 
   bool _needsOptions() {
-    return _selectedType == WidgetType.segmentedSwitch || 
-           _selectedType == WidgetType.iconMatrix;
+    return _selectedType == WidgetType.segmentedSwitch ||
+        _selectedType == WidgetType.iconMatrix;
   }
-
 
   String _getWidgetTypeName(WidgetType type) {
     switch (type) {
@@ -695,6 +781,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Compass';
       case WidgetType.keypad:
         return 'Keypad';
+      case WidgetType.textInput:
+        return 'Text Input';
       case WidgetType.iconMatrix:
         return 'Icon Matrix';
     }
@@ -710,7 +798,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
             CircleAvatar(
               backgroundColor: _selectedColor.withOpacity(0.15),
               child: Icon(
-                _selectedIconCodePoint != null ? IconData(_selectedIconCodePoint!, fontFamily: 'MaterialIcons') : Icons.widgets,
+                _selectedIconCodePoint != null
+                    ? IconData(
+                        _selectedIconCodePoint!,
+                        fontFamily: 'MaterialIcons',
+                      )
+                    : Icons.widgets,
                 color: _selectedColor,
               ),
             ),
@@ -720,7 +813,9 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _titleController.text.isEmpty ? 'Preview title' : _titleController.text,
+                    _titleController.text.isEmpty
+                        ? 'Preview title'
+                        : _titleController.text,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
@@ -739,7 +834,10 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
               ),
               child: Text(
                 'QoS $_qos',
-                style: TextStyle(color: _selectedColor, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: _selectedColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -760,17 +858,16 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          color: isSelected ? _selectedColor.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+          color: isSelected
+              ? _selectedColor.withOpacity(0.2)
+              : Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? _selectedColor : Colors.grey.withOpacity(0.3),
             width: 2,
           ),
         ),
-        child: Icon(
-          iconData,
-          color: isSelected ? _selectedColor : Colors.grey,
-        ),
+        child: Icon(iconData, color: isSelected ? _selectedColor : Colors.grey),
       ),
     );
   }
@@ -832,6 +929,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         return 'Displays heading direction (0-360 degrees).\n\nRequires:\n- Subscribe Topic.';
       case WidgetType.keypad:
         return 'Numeric Keypad for PIN entry.\n\nRequires:\n- Publish Topic.';
+      case WidgetType.textInput:
+        return 'Sends text strings to a topic.\n\nRequires:\n- Publish Topic.\n- Optional: Subscribe Topic to see current value.';
       case WidgetType.iconMatrix:
         return 'Grid of status indicators.\n\nRequires:\n- Subscribe Topic: Integer bitmask.\n- Options: Comma-separated labels for each indicator bit.';
       default:
@@ -840,7 +939,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
   }
 
   void _showJsonHelpDialog(BuildContext context) {
-     showDialog(
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('JSON Data Documentation'),
@@ -849,24 +948,34 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Subscribe JSON Data:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Subscribe JSON Data:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 8),
-              Text('You can parse received messages using simple JsonPath. The supported JsonPath are listed below.\n\n'
-                   '\$	: The root object/element\n'
-                   '@	: The current object/element\n'
-                   '. :	Child member operator\n'
-                   '.. :	Recursive descendant operator\n'
-                   '* :	Wildcard matching all objects/elements regardless their names\n'
-                   '[ ]	 : Subscript operator\n'
-                   '[ , ] :	Union operator for alternate names or array indices as a set\n'
-                   '?( )	: Applies a filter (script) expression via static evaluation\n'
-                   '( )	 : Script expression via static evaluation\n\n'
-                   'Note: Only a single quote is supported inside JsonPath expression. Script expressions inside of JSONPath locations are not recursively evaluated by JsonPath. Only the global \$ and local @ symbols are expanded by a simple regular expression. This application does not validate JsonPath you provided. In case JsonPath is invalid or it does not match with any data it simply gets ignored. For debugging please use the Text Input and Text Log Panel.'),
+              Text(
+                'You can parse received messages using simple JsonPath. The supported JsonPath are listed below.\n\n'
+                '\$	: The root object/element\n'
+                '@	: The current object/element\n'
+                '. :	Child member operator\n'
+                '.. :	Recursive descendant operator\n'
+                '* :	Wildcard matching all objects/elements regardless their names\n'
+                '[ ]	 : Subscript operator\n'
+                '[ , ] :	Union operator for alternate names or array indices as a set\n'
+                '?( )	: Applies a filter (script) expression via static evaluation\n'
+                '( )	 : Script expression via static evaluation\n\n'
+                'Note: Only a single quote is supported inside JsonPath expression. Script expressions inside of JSONPath locations are not recursively evaluated by JsonPath. Only the global \$ and local @ symbols are expanded by a simple regular expression. This application does not validate JsonPath you provided. In case JsonPath is invalid or it does not match with any data it simply gets ignored. For debugging please use the Text Input and Text Log Panel.',
+              ),
               Divider(height: 24),
-              Text('Publish JSON Data:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Publish JSON Data:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 8),
-              Text('You can wrap publish data into a JSON format. For example, you have configured {"kitchen": {"fan": "<slider-payload>"}} as JSON pattern. Now if you set slider value to 10, then <slider-payload> will be replaced by 10 and finally {"kitchen": {"fan": "10"}} will be published.\n\n'
-                   'You can use multiple replaceable variable like <timestamp>, <client-id> etc. depending on the context. To know all available variables, press the inline help button while configuring the panel.'),
+              Text(
+                'You can wrap publish data into a JSON format. For example, you have configured {"kitchen": {"fan": "<slider-payload>"}} as JSON pattern. Now if you set slider value to 10, then <slider-payload> will be replaced by 10 and finally {"kitchen": {"fan": "10"}} will be published.\n\n'
+                'You can use multiple replaceable variable like <timestamp>, <client-id> etc. depending on the context. To know all available variables, press the inline help button while configuring the panel.',
+              ),
             ],
           ),
         ),
@@ -898,8 +1007,12 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         id: widget.initialConfig?.id,
         title: _titleController.text,
         type: _selectedType,
-        subscribeTopic: _subscribeTopicController.text.isEmpty ? null : _subscribeTopicController.text,
-        publishTopic: _publishTopicController.text.isEmpty ? null : _publishTopicController.text,
+        subscribeTopic: _subscribeTopicController.text.isEmpty
+            ? null
+            : _subscribeTopicController.text,
+        publishTopic: _publishTopicController.text.isEmpty
+            ? null
+            : _publishTopicController.text,
         onPayload: _onPayloadController.text,
         offPayload: _offPayloadController.text,
         qos: _qos,
@@ -909,8 +1022,8 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         maxValue: maxValue,
         unit: _unitController.text.isEmpty ? null : _unitController.text,
         // Map new fields
-        options: _optionsController.text.isNotEmpty 
-            ? _optionsController.text.split(',').map((e) => e.trim()).toList() 
+        options: _optionsController.text.isNotEmpty
+            ? _optionsController.text.split(',').map((e) => e.trim()).toList()
             : null,
         warningThreshold: double.tryParse(_warningThresholdController.text),
         criticalThreshold: double.tryParse(_criticalThresholdController.text),

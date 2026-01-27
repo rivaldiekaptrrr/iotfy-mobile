@@ -29,6 +29,8 @@ import '../widgets/panels/linear_gauge_panel.dart';
 import '../widgets/panels/joystick_panel.dart';
 import '../widgets/panels/compass_panel.dart';
 import '../widgets/panels/keypad_panel.dart';
+import '../widgets/panels/text_panel.dart';
+import '../widgets/panels/text_input_panel.dart';
 import '../widgets/panels/icon_matrix_panel.dart';
 import 'widget_config_dialog.dart';
 import 'broker_list_screen.dart';
@@ -105,8 +107,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final dashboard = ref.watch(currentDashboardProvider);
     final broker = dashboard != null
         ? ref
-            .watch(brokerConfigsProvider.notifier)
-            .getBroker(dashboard.brokerId)
+              .watch(brokerConfigsProvider.notifier)
+              .getBroker(dashboard.brokerId)
         : null;
     final connectionStatus = ref.watch(connectionStatusProvider);
     final status = connectionStatus.value ?? ConnectionStatus.disconnected;
@@ -410,13 +412,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         panel = LineChartPanel(config: config);
         break;
       case WidgetType.text:
-        panel = Center(
-          child: Text(
-            config.title,
-            style: Theme.of(context).textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-        );
+        panel = TextPanel(config: config);
+        break;
+      case WidgetType.textInput:
+        panel = TextInputPanel(config: config);
         break;
       case WidgetType.map:
         panel = MapPanel(config: config);
@@ -512,6 +511,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             WidgetType.toggle => 4,
             WidgetType.button => 4,
             WidgetType.text => 4,
+            WidgetType.textInput => 6,
             WidgetType.gauge => 6,
             WidgetType.lineChart => 8,
             WidgetType.map => 8,
@@ -536,6 +536,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             WidgetType.toggle => 4,
             WidgetType.button => 3,
             WidgetType.text => 3,
+            WidgetType.textInput => 3,
             WidgetType.gauge => 6,
             WidgetType.lineChart => 6,
             WidgetType.map => 8,
