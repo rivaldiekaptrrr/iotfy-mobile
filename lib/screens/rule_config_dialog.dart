@@ -31,22 +31,27 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
   String? _selectedWidgetId;
   RuleOperator _selectedOperator = RuleOperator.greaterThan;
   AlarmSeverity _selectedSeverity = AlarmSeverity.minor;
-  
+
   bool _enableNotification = true;
   bool _enableMqttPublish = false;
 
   @override
   void initState() {
     super.initState();
-    
-    _nameController = TextEditingController(text: widget.initialRule?.name ?? '');
+
+    _nameController = TextEditingController(
+      text: widget.initialRule?.name ?? '',
+    );
     _thresholdController = TextEditingController(
       text: widget.initialRule?.thresholdValue.toString() ?? '0',
     );
     _notifyTitleController = TextEditingController(
-      text: widget.initialRule?.actions
-          .where((a) => a.type == RuleActionType.showNotification)
-          .firstOrNull?.notificationTitle ?? '',
+      text:
+          widget.initialRule?.actions
+              .where((a) => a.type == RuleActionType.showNotification)
+              .firstOrNull
+              ?.notificationTitle ??
+          '',
     );
     _notifyBodyController = TextEditingController();
     _mqttTopicController = TextEditingController();
@@ -56,12 +61,14 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
       _selectedWidgetId = widget.initialRule!.sourceWidgetId;
       _selectedOperator = widget.initialRule!.operator;
       _selectedSeverity = widget.initialRule!.severity;
-      
-      _enableNotification = widget.initialRule!.actions
-          .any((a) => a.type == RuleActionType.showNotification);
-      _enableMqttPublish = widget.initialRule!.actions
-          .any((a) => a.type == RuleActionType.publishMqtt);
-      
+
+      _enableNotification = widget.initialRule!.actions.any(
+        (a) => a.type == RuleActionType.showNotification,
+      );
+      _enableMqttPublish = widget.initialRule!.actions.any(
+        (a) => a.type == RuleActionType.publishMqtt,
+      );
+
       final mqttAction = widget.initialRule!.actions
           .where((a) => a.type == RuleActionType.publishMqtt)
           .firstOrNull;
@@ -86,16 +93,19 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
   @override
   Widget build(BuildContext context) {
     final dashboard = ref.watch(currentDashboardProvider)!;
-    final widgets = dashboard.widgets.where((w) => 
-      w.type == WidgetType.gauge || 
-      w.type == WidgetType.slider ||
-      w.subscribeTopic != null
-    ).toList();
+    final widgets = dashboard.widgets
+        .where(
+          (w) =>
+              w.type == WidgetType.gauge ||
+              w.type == WidgetType.slider ||
+              w.subscribeTopic != null,
+        )
+        .toList();
 
     return AlertDialog(
       title: Text(widget.initialRule == null ? 'Add Rule' : 'Edit Rule'),
-      content: SizedBox(
-        width: 500,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -110,18 +120,26 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Condition:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Condition:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedWidgetId,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Source Widget',
                   border: OutlineInputBorder(),
                 ),
-                items: widgets.map((w) => DropdownMenuItem(
-                  value: w.id,
-                  child: Text(w.title),
-                )).toList(),
+                items: widgets
+                    .map(
+                      (w) => DropdownMenuItem(
+                        value: w.id,
+                        child: Text(w.title, overflow: TextOverflow.ellipsis),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
                   setState(() => _selectedWidgetId = value);
                 },
@@ -132,14 +150,22 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
                   Expanded(
                     child: DropdownButtonFormField<RuleOperator>(
                       value: _selectedOperator,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Operator',
                         border: OutlineInputBorder(),
                       ),
-                      items: RuleOperator.values.map((op) => DropdownMenuItem(
-                        value: op,
-                        child: Text(_getOperatorText(op)),
-                      )).toList(),
+                      items: RuleOperator.values
+                          .map(
+                            (op) => DropdownMenuItem(
+                              value: op,
+                              child: Text(
+                                _getOperatorText(op),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (value) {
                         setState(() => _selectedOperator = value!);
                       },
@@ -161,27 +187,44 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
               const SizedBox(height: 16),
               DropdownButtonFormField<AlarmSeverity>(
                 value: _selectedSeverity,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Alarm Severity',
                   border: OutlineInputBorder(),
                 ),
-                items: AlarmSeverity.values.map((severity) => DropdownMenuItem(
-                  value: severity,
-                  child: Row(
-                    children: [
-                      Icon(_getSeverityIcon(severity), size: 16, color: _getSeverityColor(severity)),
-                      const SizedBox(width: 8),
-                      Text(severity.name.toUpperCase()),
-                    ],
-                  ),
-                )).toList(),
+                items: AlarmSeverity.values
+                    .map(
+                      (severity) => DropdownMenuItem(
+                        value: severity,
+                        child: Row(
+                          children: [
+                            Icon(
+                              _getSeverityIcon(severity),
+                              size: 16,
+                              color: _getSeverityColor(severity),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                severity.name.toUpperCase(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
                   setState(() => _selectedSeverity = value!);
                 },
               ),
               const SizedBox(height: 16),
               const Divider(),
-              const Text('Actions:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Actions:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               CheckboxListTile(
                 title: const Text('Show Notification'),
@@ -192,7 +235,11 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
               ),
               if (_enableNotification) ...[
                 Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 12,
+                  ),
                   child: TextField(
                     controller: _notifyTitleController,
                     decoration: const InputDecoration(
@@ -212,7 +259,11 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
               ),
               if (_enableMqttPublish) ...[
                 Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 12,
+                  ),
                   child: Column(
                     children: [
                       TextField(
@@ -245,10 +296,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: _saveRule,
-          child: const Text('Save'),
-        ),
+        FilledButton(onPressed: _saveRule, child: const Text('Save')),
       ],
     );
   }
@@ -256,17 +304,17 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
   String _getOperatorText(RuleOperator op) {
     switch (op) {
       case RuleOperator.greaterThan:
-        return 'Greater than (>)';
+        return '(>)';
       case RuleOperator.lessThan:
-        return 'Less than (<)';
+        return '(<)';
       case RuleOperator.equals:
-        return 'Equals (==)';
+        return '(==)';
       case RuleOperator.greaterOrEqual:
-        return 'Greater or equal (>=)';
+        return '(>=)';
       case RuleOperator.lessOrEqual:
-        return 'Less or equal (<=)';
+        return '(<=)';
       case RuleOperator.notEquals:
-        return 'Not equals (!=)';
+        return '(!=)';
     }
   }
 
@@ -280,32 +328,36 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
 
     final threshold = double.tryParse(_thresholdController.text);
     if (threshold == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid threshold value')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invalid threshold value')));
       return;
     }
 
     // Build actions list
     final actions = <RuleAction>[];
-    
+
     if (_enableNotification) {
-      actions.add(RuleAction(
-        type: RuleActionType.showNotification,
-        notificationTitle: _notifyTitleController.text.isEmpty 
-            ? _nameController.text 
-            : _notifyTitleController.text,
-      ));
+      actions.add(
+        RuleAction(
+          type: RuleActionType.showNotification,
+          notificationTitle: _notifyTitleController.text.isEmpty
+              ? _nameController.text
+              : _notifyTitleController.text,
+        ),
+      );
     }
-    
-    if (_enableMqttPublish && 
-        _mqttTopicController.text.isNotEmpty && 
+
+    if (_enableMqttPublish &&
+        _mqttTopicController.text.isNotEmpty &&
         _mqttPayloadController.text.isNotEmpty) {
-      actions.add(RuleAction(
-        type: RuleActionType.publishMqtt,
-        mqttTopic: _mqttTopicController.text,
-        mqttPayload: _mqttPayloadController.text,
-      ));
+      actions.add(
+        RuleAction(
+          type: RuleActionType.publishMqtt,
+          mqttTopic: _mqttTopicController.text,
+          mqttPayload: _mqttPayloadController.text,
+        ),
+      );
     }
 
     if (actions.isEmpty) {
