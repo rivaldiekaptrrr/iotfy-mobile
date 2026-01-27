@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/panel_widget_config.dart';
 import '../models/dashboard_config.dart';
@@ -105,8 +106,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final dashboard = ref.watch(currentDashboardProvider);
     final broker = dashboard != null
         ? ref
-            .watch(brokerConfigsProvider.notifier)
-            .getBroker(dashboard.brokerId)
+              .watch(brokerConfigsProvider.notifier)
+              .getBroker(dashboard.brokerId)
         : null;
     final connectionStatus = ref.watch(connectionStatusProvider);
     final status = connectionStatus.value ?? ConnectionStatus.disconnected;
@@ -475,6 +476,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       config: config,
       isEditMode: _isEditMode,
       onEdit: () => _editWidget(config),
+      onDuplicate: () => _duplicateWidget(config),
       onDelete: () => _deleteWidget(config.id),
       child: panel,
     );
@@ -590,6 +592,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       final newWidgets = dashboard.widgets.where((w) => w.id != id).toList();
       final updated = dashboard.copyWith(widgets: newWidgets);
       ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
+    }
+  }
+
+  void _duplicateWidget(PanelWidgetConfig config) {
+    final dashboard = ref.read(currentDashboardProvider);
+    if (dashboard == null) return;
+
+    // Find a free spot at the bottom
+    double maxY = 0;
+    for (var w in dashboard.widgets) {
+      if ((w.y + w.height) > maxY) maxY = w.y + w.height;
+    }
+
+    final newConfig = config.copyWith(
+      id: const Uuid().v4(),
+      title: '${config.title} (Copy)',
+      x: 0,
+      y: maxY,
+    );
+
+    final updated = dashboard.copyWith(
+      widgets: [...dashboard.widgets, newConfig],
+    );
+    ref.read(dashboardConfigsProvider.notifier).updateDashboard(updated);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Duplicated widget: ${newConfig.title}'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => _deleteWidget(newConfig.id),
+          ),
+        ),
+      );
     }
   }
 
@@ -824,6 +861,7 @@ class PanelContainer extends StatelessWidget {
   final bool isEditMode;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onDuplicate;
 
   const PanelContainer({
     super.key,
@@ -832,6 +870,7 @@ class PanelContainer extends StatelessWidget {
     required this.isEditMode,
     required this.onEdit,
     required this.onDelete,
+    required this.onDuplicate,
   });
 
   @override
@@ -887,6 +926,13 @@ class PanelContainer extends StatelessWidget {
                     color: Colors.white,
                     bg: Colors.red,
                     onTap: onDelete,
+                  ),
+                  const SizedBox(width: 4),
+                  _buildEditAction(
+                    icon: Icons.copy_rounded,
+                    color: Colors.white,
+                    bg: Colors.orange,
+                    onTap: onDuplicate,
                   ),
                 ],
               ),
