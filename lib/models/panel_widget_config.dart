@@ -50,6 +50,8 @@ enum WidgetType {
   keypad,
   @HiveField(21)
   iconMatrix,
+  @HiveField(22)
+  textInput,
 }
 
 @HiveType(typeId: 3)

@@ -1,13 +1,6 @@
 import '../models/panel_widget_config.dart';
 
-enum WidgetCategory {
-  charts,
-  gauges,
-  controls,
-  maps,
-  indicators,
-  others,
-}
+enum WidgetCategory { charts, gauges, controls, maps, indicators, others }
 
 class WidgetCategoryHelper {
   static WidgetCategory getCategory(WidgetType type) {
@@ -33,8 +26,9 @@ class WidgetCategoryHelper {
       case WidgetType.joystick:
       case WidgetType.keypad:
       case WidgetType.segmentedSwitch:
+      case WidgetType.textInput:
         return WidgetCategory.controls;
-        
+
       // Maps & Location
       case WidgetType.map:
       case WidgetType.compass:
