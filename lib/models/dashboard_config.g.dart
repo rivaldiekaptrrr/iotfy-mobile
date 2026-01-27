@@ -23,13 +23,15 @@ class DashboardConfigAdapter extends TypeAdapter<DashboardConfig> {
       widgets: (fields[3] as List?)?.cast<PanelWidgetConfig>(),
       createdAt: fields[4] as DateTime?,
       updatedAt: fields[5] as DateTime?,
+      iconCodePoint: fields[6] as int?,
+      colorValue: fields[7] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, DashboardConfig obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +43,11 @@ class DashboardConfigAdapter extends TypeAdapter<DashboardConfig> {
       ..writeByte(4)
       ..write(obj.createdAt)
       ..writeByte(5)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(6)
+      ..write(obj.iconCodePoint)
+      ..writeByte(7)
+      ..write(obj.colorValue);
   }
 
   @override

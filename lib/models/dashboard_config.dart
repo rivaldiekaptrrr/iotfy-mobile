@@ -24,6 +24,12 @@ class DashboardConfig extends HiveObject {
   @HiveField(5)
   DateTime updatedAt;
 
+  @HiveField(6)
+  int? iconCodePoint;
+
+  @HiveField(7)
+  int? colorValue;
+
   DashboardConfig({
     String? id,
     required this.name,
@@ -31,16 +37,20 @@ class DashboardConfig extends HiveObject {
     List<PanelWidgetConfig>? widgets,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : id = id ?? const Uuid().v4(),
-        widgets = widgets ?? [],
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    this.iconCodePoint,
+    this.colorValue,
+  }) : id = id ?? const Uuid().v4(),
+       widgets = widgets ?? [],
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   DashboardConfig copyWith({
     String? name,
     String? brokerId,
     List<PanelWidgetConfig>? widgets,
     DateTime? updatedAt,
+    int? iconCodePoint,
+    int? colorValue,
   }) {
     return DashboardConfig(
       id: id,
@@ -49,6 +59,8 @@ class DashboardConfig extends HiveObject {
       widgets: widgets ?? this.widgets,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
+      iconCodePoint: iconCodePoint ?? this.iconCodePoint,
+      colorValue: colorValue ?? this.colorValue,
     );
   }
 }
