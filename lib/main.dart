@@ -8,6 +8,8 @@ import 'models/panel_widget_config.dart';
 import 'models/rule_config.dart';
 import 'models/alarm_event.dart';
 import 'screens/splash_screen.dart';
+import 'services/rule_evaluator_service.dart';
+import 'services/rule_schedule_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +26,9 @@ void main() async {
   Hive.registerAdapter(RuleOperatorAdapter());
   Hive.registerAdapter(RuleActionTypeAdapter());
   Hive.registerAdapter(RuleActionAdapter());
+  Hive.registerAdapter(RuleTriggerTypeAdapter());
+  Hive.registerAdapter(ScheduleTypeAdapter());
+  Hive.registerAdapter(ScheduleConfigAdapter());
   Hive.registerAdapter(AlarmEventAdapter());
   Hive.registerAdapter(AlarmSeverityAdapter());
   Hive.registerAdapter(AlarmStatusAdapter());
@@ -61,6 +66,10 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize background services
+    ref.watch(ruleEvaluatorProvider);
+    ref.watch(ruleScheduleProvider);
+
     return MaterialApp(
       title: 'IoT MQTT Panel',
       debugShowCheckedModeBanner: false,

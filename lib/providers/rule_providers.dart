@@ -37,7 +37,9 @@ class RuleConfigsNotifier extends StateNotifier<List<RuleConfig>> {
   }
 
   List<RuleConfig> getActiveRulesForDashboard(String dashboardId) {
-    return state.where((r) => r.dashboardId == dashboardId && r.isActive).toList();
+    return state
+        .where((r) => r.dashboardId == dashboardId && r.isActive)
+        .toList();
   }
 
   void recordTrigger(String ruleId) {
@@ -48,9 +50,18 @@ class RuleConfigsNotifier extends StateNotifier<List<RuleConfig>> {
     );
     updateRule(updated);
   }
+
+  RuleConfig? getRule(String id) {
+    try {
+      return state.firstWhere((r) => r.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
-final ruleConfigsProvider = StateNotifierProvider<RuleConfigsNotifier, List<RuleConfig>>((ref) {
-  final box = Hive.box<RuleConfig>('rule_configs');
-  return RuleConfigsNotifier(box);
-});
+final ruleConfigsProvider =
+    StateNotifierProvider<RuleConfigsNotifier, List<RuleConfig>>((ref) {
+      final box = Hive.box<RuleConfig>('rule_configs');
+      return RuleConfigsNotifier(box);
+    });
