@@ -44,7 +44,7 @@ class PanelWidgetConfigAdapter extends TypeAdapter<PanelWidgetConfig> {
       isJsonPayload: fields[24] as bool,
       jsonPath: fields[25] as String?,
       jsonPattern: fields[26] as String?,
-      decimalPlaces: fields[27] as int,
+      decimalPlaces: fields[27] as int? ?? 1,
     );
   }
 

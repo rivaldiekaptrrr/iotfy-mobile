@@ -798,12 +798,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
             CircleAvatar(
               backgroundColor: _selectedColor.withOpacity(0.15),
               child: Icon(
-                _selectedIconCodePoint != null
-                    ? IconData(
-                        _selectedIconCodePoint!,
-                        fontFamily: 'MaterialIcons',
-                      )
-                    : Icons.widgets,
+                IconHelper.getIcon(_selectedIconCodePoint) ?? Icons.widgets,
                 color: _selectedColor,
               ),
             ),

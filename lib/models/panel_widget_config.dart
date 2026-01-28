@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import '../utils/icon_helper.dart';
 
 part 'panel_widget_config.g.dart';
 
@@ -147,8 +148,7 @@ class PanelWidgetConfig extends HiveObject {
   Color get color => colorValue != null ? Color(colorValue!) : Colors.blue;
 
   IconData? get icon {
-    if (iconCodePoint == null) return null;
-    return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
+    return IconHelper.getIcon(iconCodePoint);
   }
 
   PanelWidgetConfig copyWith({
