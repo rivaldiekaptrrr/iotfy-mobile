@@ -219,91 +219,382 @@ class DashboardListScreen extends ConsumerWidget {
   }
 
   void _openTemplates(BuildContext context, WidgetRef ref) {
-    // Template logic mostly same, just add icons
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 10,
-                  ),
-                  child: Text(
-                    'Quick Start Templates',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Dashboard Templates',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 8,
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      _buildTemplateTile(
+                        context,
+                        title: 'Environment Monitor',
+                        subtitle: 'Temp, Humidity, Air Quality',
+                        icon: Icons.thermostat_rounded,
+                        color: Colors.orange,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _createFromTemplate(
+                            ref,
+                            'Env Monitor',
+                            Icons.thermostat_rounded.codePoint,
+                            Colors.orange.value,
+                            [
+                              // Row 1: Temp & Hum
+                              PanelWidgetConfig(
+                                title: 'Temperature',
+                                type: WidgetType.gauge,
+                                subscribeTopic: 'env/temp',
+                                minValue: 0,
+                                maxValue: 50,
+                                unit: '°C',
+                                colorValue: Colors.orange.value,
+                                x: 0,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              PanelWidgetConfig(
+                                title: 'Humidity',
+                                type: WidgetType.lineChart,
+                                subscribeTopic: 'env/hum',
+                                minValue: 0,
+                                maxValue: 100,
+                                unit: '%',
+                                colorValue: Colors.blue.value,
+                                maxDataPoints: 50,
+                                x: 4,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              // Row 2: Air Quality
+                              PanelWidgetConfig(
+                                title: 'Air Quality',
+                                type: WidgetType.text,
+                                subscribeTopic: 'env/iaq',
+                                colorValue: Colors.green.value,
+                                x: 0,
+                                y: 3,
+                                width: 4,
+                                height: 2,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      _buildTemplateTile(
+                        context,
+                        title: 'Smart Home Hub',
+                        subtitle: 'Lights, Security, Sensors',
+                        icon: Icons.home_rounded,
+                        color: Colors.indigo,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _createFromTemplate(
+                            ref,
+                            'Smart Home',
+                            Icons.home_rounded.codePoint,
+                            Colors.indigo.value,
+                            [
+                              // Row 1: Light Switches
+                              PanelWidgetConfig(
+                                title: 'Living Room',
+                                type: WidgetType.toggle,
+                                subscribeTopic: 'home/living/light/state',
+                                publishTopic: 'home/living/light/set',
+                                onPayload: 'ON',
+                                offPayload: 'OFF',
+                                colorValue: Colors.amber.value,
+                                x: 0,
+                                y: 0,
+                                width: 4,
+                                height: 2,
+                              ),
+                              PanelWidgetConfig(
+                                title: 'Kitchen',
+                                type: WidgetType.toggle,
+                                subscribeTopic: 'home/kitchen/light/state',
+                                publishTopic: 'home/kitchen/light/set',
+                                onPayload: 'ON',
+                                offPayload: 'OFF',
+                                colorValue: Colors.amber.value,
+                                x: 4,
+                                y: 0,
+                                width: 4,
+                                height: 2,
+                              ),
+                              // Row 2: Door & Temp
+                              PanelWidgetConfig(
+                                title: 'Front Door',
+                                type: WidgetType.text,
+                                subscribeTopic: 'home/door/front',
+                                colorValue: Colors.red.value,
+                                x: 0,
+                                y: 2,
+                                width: 4,
+                                height: 2,
+                              ),
+                              PanelWidgetConfig(
+                                title: 'Temperature',
+                                type: WidgetType.gauge,
+                                subscribeTopic: 'home/temp',
+                                minValue: 10,
+                                maxValue: 40,
+                                unit: '°C',
+                                colorValue: Colors.orange.value,
+                                x: 4,
+                                y: 2,
+                                width: 4,
+                                height: 3,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      _buildTemplateTile(
+                        context,
+                        title: 'Industrial Status',
+                        subtitle: 'Machine State, RPM, Vibration',
+                        icon: Icons.factory_rounded,
+                        color: Colors.blueGrey,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _createFromTemplate(
+                            ref,
+                            'Factory Floor',
+                            Icons.factory_rounded.codePoint,
+                            Colors.blueGrey.value,
+                            [
+                              // Row 1: Status & RPM
+                              PanelWidgetConfig(
+                                title: 'Machine Status',
+                                type: WidgetType.text,
+                                subscribeTopic: 'factory/machine/1/status',
+                                colorValue: Colors.green.value,
+                                x: 0,
+                                y: 0,
+                                width: 4,
+                                height: 2,
+                              ),
+                              PanelWidgetConfig(
+                                title: 'Motor RPM',
+                                type: WidgetType.gauge,
+                                subscribeTopic: 'factory/motor/rpm',
+                                minValue: 0,
+                                maxValue: 3000,
+                                unit: 'RPM',
+                                colorValue: Colors.red.value,
+                                x: 4,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              // Row 2: Vibration Chart (Full Width)
+                              PanelWidgetConfig(
+                                title: 'Vibration',
+                                type: WidgetType.lineChart,
+                                subscribeTopic: 'factory/motor/vibration',
+                                minValue: 0,
+                                maxValue: 10,
+                                unit: 'mm/s',
+                                colorValue: Colors.orange.value,
+                                x: 0,
+                                y: 3,
+                                width: 8,
+                                height: 4,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      _buildTemplateTile(
+                        context,
+                        title: 'Energy Monitor',
+                        subtitle: 'Voltage, Current, Power Usage',
+                        icon: Icons.bolt_rounded,
+                        color: Colors.yellow.shade700,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _createFromTemplate(
+                            ref,
+                            'Energy Meter',
+                            Icons.bolt_rounded.codePoint,
+                            Colors.yellow.shade800.value,
+                            [
+                              // Row 1: Voltage & Current
+                              PanelWidgetConfig(
+                                title: 'Voltage',
+                                type: WidgetType.gauge,
+                                subscribeTopic: 'energy/voltage',
+                                minValue: 200,
+                                maxValue: 240,
+                                unit: 'V',
+                                colorValue: Colors.yellow.shade700.value,
+                                x: 0,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              PanelWidgetConfig(
+                                title: 'Current',
+                                type: WidgetType.gauge,
+                                subscribeTopic: 'energy/current',
+                                minValue: 0,
+                                maxValue: 20,
+                                unit: 'A',
+                                colorValue: Colors.blue.value,
+                                x: 4,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              // Row 2: Power Chart
+                              PanelWidgetConfig(
+                                title: 'Power',
+                                type: WidgetType.lineChart,
+                                subscribeTopic: 'energy/power',
+                                minValue: 0,
+                                maxValue: 5000,
+                                unit: 'W',
+                                colorValue: Colors.red.value,
+                                x: 0,
+                                y: 3,
+                                width: 8,
+                                height: 4,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      _buildTemplateTile(
+                        context,
+                        title: 'Server Room',
+                        subtitle: 'UPS, Rack Temp, Load',
+                        icon: Icons.dns_rounded,
+                        color: Colors.purple,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _createFromTemplate(
+                            ref,
+                            'Server Room',
+                            Icons.dns_rounded.codePoint,
+                            Colors.purple.value,
+                            [
+                              // Row 1: Temp & UPS
+                              PanelWidgetConfig(
+                                title: 'Rack Temp',
+                                type: WidgetType.gauge,
+                                subscribeTopic: 'server/rack1/temp',
+                                minValue: 15,
+                                maxValue: 35,
+                                unit: '°C',
+                                colorValue: Colors.blue.value,
+                                x: 0,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              PanelWidgetConfig(
+                                title: 'UPS Load',
+                                type: WidgetType.lineChart,
+                                subscribeTopic: 'server/ups/load',
+                                minValue: 0,
+                                maxValue: 100,
+                                unit: '%',
+                                colorValue: Colors.green.value,
+                                x: 4,
+                                y: 0,
+                                width: 4,
+                                height: 3,
+                              ),
+                              // Row 2: Main Power
+                              PanelWidgetConfig(
+                                title: 'Main Power',
+                                type: WidgetType.text,
+                                subscribeTopic: 'server/power/source',
+                                colorValue: Colors.amber.value,
+                                x: 0,
+                                y: 3,
+                                width: 4,
+                                height: 2,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.thermostat, color: Colors.orange),
-                  ),
-                  title: const Text('Environment Monitor'),
-                  subtitle: const Text(
-                    'Gauge + Line chart for temperature & humidity',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _createFromTemplate(
-                      ref,
-                      'Env Monitor',
-                      Icons.thermostat.codePoint,
-                      Colors.orange.value,
-                      [
-                        // ... widgets ...
-                        PanelWidgetConfig(
-                          title: 'Temperature',
-                          type: WidgetType.gauge,
-                          subscribeTopic: 'env/temp',
-                          minValue: 0,
-                          maxValue: 50,
-                          colorValue: Colors.orange.value,
-                          x: 0,
-                          y: 0,
-                          width: 6,
-                          height: 6,
-                        ),
-                        PanelWidgetConfig(
-                          title: 'Humidity',
-                          type: WidgetType.lineChart,
-                          subscribeTopic: 'env/hum',
-                          minValue: 0,
-                          maxValue: 100,
-                          colorValue: Colors.blue.value,
-                          x: 6,
-                          y: 0,
-                          width: 6,
-                          height: 6,
-                        ),
-                      ],
-                    );
-                  },
                 ),
-                // Add more templates as needed
               ],
-            ),
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildTemplateTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 0,
+      color: color.withOpacity(0.05),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: color.withOpacity(0.1)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 28),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+        onTap: onTap,
+      ),
     );
   }
 
