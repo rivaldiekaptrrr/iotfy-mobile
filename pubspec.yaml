@@ -34,6 +34,12 @@ dependencies:
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   flutter_local_notifications: ^18.0.1
+  
+  # Security & Encryption
+  flutter_secure_storage: ^9.0.0
+  
+  # File Picker for Certificate Upload
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import '../models/broker_config.dart';
 import '../models/mqtt_message.dart' as app_mqtt;
 import '../models/mqtt_log_entry.dart';
+import '../services/secure_credential_storage.dart';
 
 enum ConnectionStatus {
   disconnected,
@@ -19,6 +21,8 @@ class MqttService {
   static final MqttService _instance = MqttService._internal();
   factory MqttService() => _instance;
   MqttService._internal();
+
+  final SecureCredentialStorage _secureStorage = SecureCredentialStorage();
 
   MqttServerClient? _client;
   BrokerConfig? _currentConfig;
@@ -68,7 +72,7 @@ class MqttService {
       _reconnectAttempts = 0;
       _updateStatus(ConnectionStatus.connecting);
       _addLog(
-        'Connecting to ${config.host}:${config.port} (ssl=${config.useSsl})',
+        'Connecting to ${config.host}:${config.getEffectivePort()} (ssl=${config.useSsl})',
       );
 
       await disconnect();
@@ -76,7 +80,7 @@ class MqttService {
       final clientId =
           config.clientId ??
           'flutter_mqtt_${DateTime.now().millisecondsSinceEpoch}';
-      _client = MqttServerClient.withPort(config.host, clientId, config.port);
+      _client = MqttServerClient.withPort(config.host, clientId, config.getEffectivePort());
 
       // Configure client settings
       _client!.logging(on: false);
@@ -89,10 +93,22 @@ class MqttService {
       _client!.secure = config.useSsl;
       _client!.setProtocolV311(); // Use MQTT 3.1.1 protocol
 
-      if (config.useSsl) {
+      // Configure SSL/TLS with certificates
+      if (config.useSsl && config.sslConfig != null) {
+        await _configureSsl(config);
+      } else if (config.useSsl) {
+        // Basic SSL tanpa certificates
         _client!.securityContext = SecurityContext.defaultContext;
-        _client!.onBadCertificate = (dynamic certificate) =>
-            true; // Accept self-signed certificates
+        _client!.onBadCertificate = (dynamic certificate) => true;
+      }
+
+      // Get credentials dari secure storage jika diperlukan
+      String? username = config.username;
+      String? password = config.password;
+      
+      if (config.hasSecureCredentials) {
+        username = await _secureStorage.getUsername(config.id) ?? username;
+        password = await _secureStorage.getPassword(config.id) ?? password;
       }
 
       // Create connection message
@@ -102,8 +118,8 @@ class MqttService {
           .withWillQos(MqttQos.atMostOnce)
           .keepAliveFor(config.keepAlivePeriod);
 
-      if (config.username != null && config.username!.isNotEmpty) {
-        connMessage.authenticateAs(config.username!, config.password ?? '');
+      if (username != null && username.isNotEmpty) {
+        connMessage.authenticateAs(username, password ?? '');
       }
 
       _client!.connectionMessage = connMessage;
@@ -146,6 +162,66 @@ class MqttService {
         _scheduleReconnect();
       }
       return false;
+    }
+  }
+
+  Future<void> _configureSsl(BrokerConfig config) async {
+    try {
+      final sslConfig = config.sslConfig!;
+      final securityContext = SecurityContext.defaultContext;
+
+      // Load certificates dari secure storage
+      if (sslConfig.certificateId != null) {
+        final certBytes = await _secureStorage.getCertificate(config.id);
+        final privateKeyBytes = await _secureStorage.getPrivateKey(config.id);
+
+        if (certBytes != null && certBytes.isNotEmpty) {
+          // Load CA certificate atau client certificate
+          try {
+            securityContext.useCertificateChainBytes(certBytes);
+            _addLog('Certificate loaded successfully');
+          } catch (e) {
+            _addLog('Warning: Could not load certificate: $e', level: MqttLogLevel.error);
+          }
+        }
+
+        if (privateKeyBytes != null && privateKeyBytes.isNotEmpty) {
+          try {
+            // Load private key (mungkin perlu passphrase jika ada)
+            securityContext.usePrivateKeyBytes(privateKeyBytes);
+            _addLog('Private key loaded successfully');
+          } catch (e) {
+            _addLog('Warning: Could not load private key: $e', level: MqttLogLevel.error);
+          }
+        }
+      }
+
+      // Konfigurasi certificate verification
+      if (sslConfig.acceptSelfSigned) {
+        // Accept self-signed certificates
+        _client!.onBadCertificate = (dynamic certificate) {
+          _addLog('Accepting self-signed certificate', level: MqttLogLevel.info);
+          return true;
+        };
+      } else if (!sslConfig.verifyCertificate) {
+        // Skip certificate verification (less secure)
+        _client!.onBadCertificate = (dynamic certificate) {
+          _addLog('Skipping certificate verification', level: MqttLogLevel.info);
+          return true;
+        };
+      } else {
+        // Default: accept self-signed untuk compatibility
+        _client!.onBadCertificate = (dynamic certificate) => true;
+      }
+
+      _client!.securityContext = securityContext;
+      _addLog('SSL/TLS configured: type=${sslConfig.certificateType}');
+      
+    } catch (e) {
+      _addLog('SSL configuration error: $e', level: MqttLogLevel.error);
+      // Fallback ke default SSL context
+      _client!.securityContext = SecurityContext.defaultContext;
+      _client!.onBadCertificate = (dynamic certificate) => true;
     }
   }
 

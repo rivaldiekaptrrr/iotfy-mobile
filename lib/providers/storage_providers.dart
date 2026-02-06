@@ -2,12 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/broker_config.dart';
 import '../models/dashboard_config.dart';
+import '../services/secure_credential_storage.dart';
 
 // Broker Configs
 class BrokerConfigsNotifier extends StateNotifier<List<BrokerConfig>> {
   BrokerConfigsNotifier() : super([]) { _loadBrokers(); }
 
   Box<BrokerConfig>? _box;
+  final SecureCredentialStorage _secureStorage = SecureCredentialStorage();
 
   Future<void> _loadBrokers() async {
     _box = await Hive.openBox<BrokerConfig>('brokers');
@@ -25,6 +27,8 @@ class BrokerConfigsNotifier extends StateNotifier<List<BrokerConfig>> {
   }
 
   Future<void> deleteBroker(String id) async {
+    // Hapus credentials dari secure storage juga
+    await _secureStorage.deleteBrokerCredentials(id);
     await _box?.delete(id);
     state = state.where((b) => b.id != id).toList();
   }
@@ -74,4 +78,9 @@ final currentDashboardProvider = Provider<DashboardConfig?>((ref) {
   if (id == null) return null;
   final found = dashboards.where((d) => d.id == id);
   return found.isNotEmpty ? found.first : null;
+});
+
+// Secure Credential Storage Provider
+final secureCredentialStorageProvider = Provider<SecureCredentialStorage>((ref) {
+  return SecureCredentialStorage();
 });

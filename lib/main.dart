@@ -17,8 +17,10 @@ void main() async {
   // Initialize Hive
   await Hive.initFlutter();
 
-  // Register Hive Adapters
+  // Register Hive Adapters - HANYA SEKALI, tanpa duplikasi!
   Hive.registerAdapter(BrokerConfigAdapter());
+  Hive.registerAdapter(CertificateTypeAdapter());
+  Hive.registerAdapter(SslConfigAdapter());
   Hive.registerAdapter(DashboardConfigAdapter());
   Hive.registerAdapter(PanelWidgetConfigAdapter());
   Hive.registerAdapter(WidgetTypeAdapter());

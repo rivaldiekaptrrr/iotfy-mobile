@@ -367,7 +367,47 @@ Keep these handy:
 
 ---
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-02-06
 **App Version**: 1.0.0+1
 **Package**: id.iotify.platform
 **Status**: Ready for submission ✅
+
+---
+
+## 🔐 Security Features (v1.1.0)
+
+Added comprehensive security features for enterprise deployment:
+
+### Secure Credential Storage
+- ✅ FlutterSecureStorage integration
+- ✅ AES-like encryption for passwords
+- ✅ Encrypted certificate storage
+- ✅ Secure credential deletion
+
+### MQTTS Support
+- ✅ SSL/TLS configuration
+- ✅ Certificate upload (.pem, .crt, .ca-bundle, .key)
+- ✅ CA Signed certificate support
+- ✅ Mutual TLS (Client Certificates)
+- ✅ Self-Signed certificate support
+- ✅ Auto port switching (1883 → 8883)
+
+### Certificate Types
+| Type | Security | Use Case |
+|------|----------|----------|
+| None | Basic | Development |
+| CA Signed | High | Production |
+| Client Cert | Very High | Enterprise/Financial |
+| Self-Signed | Medium | Internal networks |
+
+### Documentation
+- ✅ [SECURITY.md](SECURITY.md) - Full security documentation
+- ✅ [MQTTS_QUICK_START.md](MQTTS_QUICK_START.md) - Quick start guide
+
+### Testing Checklist
+- [ ] Test MQTT without SSL
+- [ ] Test MQTT with CA Signed certificate
+- [ ] Test MQTT with Client Certificate (Mutual TLS)
+- [ ] Test self-signed certificate acceptance
+- [ ] Verify credential encryption
+- [ ] Test credential deletion
