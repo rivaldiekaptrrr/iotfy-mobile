@@ -87,10 +87,16 @@ class WidgetCategoryView extends StatelessWidget {
 
   IconData _getCategoryIcon(WidgetCategory category) {
     switch (category) {
-      case WidgetCategory.monitoring:
-        return Icons.visibility;
-      case WidgetCategory.controlling:
+      case WidgetCategory.charts:
+        return Icons.bar_chart;
+      case WidgetCategory.gauges:
+        return Icons.speed;
+      case WidgetCategory.controls:
         return Icons.touch_app;
+      case WidgetCategory.maps:
+        return Icons.map;
+      case WidgetCategory.indicators:
+        return Icons.lightbulb_outline;
       case WidgetCategory.others:
         return Icons.grid_view;
     }
