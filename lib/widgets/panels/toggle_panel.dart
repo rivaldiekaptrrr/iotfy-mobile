@@ -120,7 +120,7 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
                         }
                         _toggleSwitch(value);
                       },
-                      activeColor: widget.config.color,
+                      activeThumbColor: widget.config.color,
                       trackOutlineColor: WidgetStatePropertyAll(scheme.outlineVariant),
                     ),
                   ),
@@ -129,7 +129,7 @@ class _TogglePanelState extends ConsumerState<TogglePanel> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (isError ? Colors.red : Colors.grey).withOpacity(0.1),
+                      color: (isError ? Colors.red : Colors.grey).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

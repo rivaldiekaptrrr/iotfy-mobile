@@ -29,7 +29,7 @@ class WidgetCategoryView extends StatelessWidget {
             Icon(
               _getCategoryIcon(category),
               size: 64,
-              color: Theme.of(context).disabledColor.withOpacity(0.2),
+              color: Theme.of(context).disabledColor.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Text(

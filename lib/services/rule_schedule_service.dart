@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/rule_config.dart';
@@ -9,7 +10,7 @@ class RuleScheduleService {
   Timer? _timer;
 
   RuleScheduleService(this.ref) {
-    print('[SCHEDULE] Service starting...');
+    debugPrint('[SCHEDULE] Service starting...');
     _startTimer();
   }
 
@@ -33,7 +34,7 @@ class RuleScheduleService {
       }
 
       if (_shouldTrigger(rule, now)) {
-        print('[SCHEDULE] Triggering rule: ${rule.name}');
+        debugPrint('[SCHEDULE] Triggering rule: ${rule.name}');
         ref.read(ruleEvaluatorProvider).triggerRuleManually(rule.id);
       }
     }
@@ -67,8 +68,9 @@ class RuleScheduleService {
         return true;
 
       case ScheduleType.weekly:
-        if (config.weeklyTimeMinutes == null || config.weekdays == null)
+        if (config.weeklyTimeMinutes == null || config.weekdays == null) {
           return false;
+        }
         if (!config.weekdays!.contains(now.weekday)) return false;
 
         final nowTotalMinutes = now.hour * 60 + now.minute;
@@ -98,7 +100,7 @@ class RuleScheduleService {
   }
 
   void dispose() {
-    print('[SCHEDULE] Service stopping...');
+    debugPrint('[SCHEDULE] Service stopping...');
     _timer?.cancel();
   }
 }

@@ -44,7 +44,7 @@ class BrokerListScreen extends ConsumerWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.05),
+                      theme.colorScheme.primary.withValues(alpha: 0.05),
                       theme.scaffoldBackgroundColor,
                     ],
                   ),
@@ -59,10 +59,10 @@ class BrokerListScreen extends ConsumerWidget {
                         height: 200,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
                           boxShadow: [
                             BoxShadow(
-                              color: theme.colorScheme.primary.withOpacity(0.2),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.2),
                               blurRadius: 100,
                               spreadRadius: 20,
                             ),
@@ -164,13 +164,13 @@ class BrokerListScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.hub_outlined,
             size: 64,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           ),
         ),
         const SizedBox(height: 24),
@@ -252,7 +252,7 @@ class _BrokerPremiumCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 10),
             spreadRadius: -4,
@@ -409,9 +409,9 @@ class _BrokerPremiumCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.1),
+          color: Colors.orange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.orange.withOpacity(0.2)),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
         ),
         child: const Text(
           '...',
@@ -424,12 +424,12 @@ class _BrokerPremiumCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: isConnected
-            ? Colors.green.withOpacity(0.1)
-            : Theme.of(context).disabledColor.withOpacity(0.1),
+            ? Colors.green.withValues(alpha: 0.1)
+            : Theme.of(context).disabledColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isConnected
-              ? Colors.green.withOpacity(0.2)
+              ? Colors.green.withValues(alpha: 0.2)
               : Theme.of(context).dividerColor,
         ),
       ),
@@ -445,7 +445,7 @@ class _BrokerPremiumCard extends StatelessWidget {
               boxShadow: isConnected
                   ? [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.5),
+                        color: Colors.green.withValues(alpha: 0.5),
                         blurRadius: 6,
                         spreadRadius: 1,
                       ),

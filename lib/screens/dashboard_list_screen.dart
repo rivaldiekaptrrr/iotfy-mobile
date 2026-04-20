@@ -60,7 +60,7 @@ class DashboardListScreen extends ConsumerWidget {
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.05),
+                      theme.colorScheme.primary.withValues(alpha: 0.05),
                       theme.scaffoldBackgroundColor,
                     ],
                   ),
@@ -133,13 +133,13 @@ class DashboardListScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.dashboard_outlined,
             size: 48,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           ),
         ),
         const SizedBox(height: 24),
@@ -268,7 +268,7 @@ class DashboardListScreen extends ConsumerWidget {
                             ref,
                             'Env Monitor',
                             Icons.thermostat_rounded.codePoint,
-                            Colors.orange.value,
+                            Colors.orange.toARGB32(),
                             [
                               // Row 1: Temp & Hum
                               PanelWidgetConfig(
@@ -278,7 +278,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 50,
                                 unit: '°C',
-                                colorValue: Colors.orange.value,
+                                colorValue: Colors.orange.toARGB32(),
                                 x: 0,
                                 y: 0,
                                 width: 4,
@@ -291,7 +291,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 100,
                                 unit: '%',
-                                colorValue: Colors.blue.value,
+                                colorValue: Colors.blue.toARGB32(),
                                 maxDataPoints: 50,
                                 x: 4,
                                 y: 0,
@@ -303,7 +303,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 title: 'Air Quality',
                                 type: WidgetType.text,
                                 subscribeTopic: 'env/iaq',
-                                colorValue: Colors.green.value,
+                                colorValue: Colors.green.toARGB32(),
                                 x: 0,
                                 y: 3,
                                 width: 4,
@@ -325,7 +325,7 @@ class DashboardListScreen extends ConsumerWidget {
                             ref,
                             'Smart Home',
                             Icons.home_rounded.codePoint,
-                            Colors.indigo.value,
+                            Colors.indigo.toARGB32(),
                             [
                               // Row 1: Light Switches
                               PanelWidgetConfig(
@@ -335,7 +335,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 publishTopic: 'home/living/light/set',
                                 onPayload: 'ON',
                                 offPayload: 'OFF',
-                                colorValue: Colors.amber.value,
+                                colorValue: Colors.amber.toARGB32(),
                                 x: 0,
                                 y: 0,
                                 width: 4,
@@ -348,7 +348,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 publishTopic: 'home/kitchen/light/set',
                                 onPayload: 'ON',
                                 offPayload: 'OFF',
-                                colorValue: Colors.amber.value,
+                                colorValue: Colors.amber.toARGB32(),
                                 x: 4,
                                 y: 0,
                                 width: 4,
@@ -359,7 +359,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 title: 'Front Door',
                                 type: WidgetType.text,
                                 subscribeTopic: 'home/door/front',
-                                colorValue: Colors.red.value,
+                                colorValue: Colors.red.toARGB32(),
                                 x: 0,
                                 y: 2,
                                 width: 4,
@@ -372,7 +372,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 10,
                                 maxValue: 40,
                                 unit: '°C',
-                                colorValue: Colors.orange.value,
+                                colorValue: Colors.orange.toARGB32(),
                                 x: 4,
                                 y: 2,
                                 width: 4,
@@ -394,14 +394,14 @@ class DashboardListScreen extends ConsumerWidget {
                             ref,
                             'Factory Floor',
                             Icons.factory_rounded.codePoint,
-                            Colors.blueGrey.value,
+                            Colors.blueGrey.toARGB32(),
                             [
                               // Row 1: Status & RPM
                               PanelWidgetConfig(
                                 title: 'Machine Status',
                                 type: WidgetType.text,
                                 subscribeTopic: 'factory/machine/1/status',
-                                colorValue: Colors.green.value,
+                                colorValue: Colors.green.toARGB32(),
                                 x: 0,
                                 y: 0,
                                 width: 4,
@@ -414,7 +414,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 3000,
                                 unit: 'RPM',
-                                colorValue: Colors.red.value,
+                                colorValue: Colors.red.toARGB32(),
                                 x: 4,
                                 y: 0,
                                 width: 4,
@@ -428,7 +428,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 10,
                                 unit: 'mm/s',
-                                colorValue: Colors.orange.value,
+                                colorValue: Colors.orange.toARGB32(),
                                 x: 0,
                                 y: 3,
                                 width: 8,
@@ -450,7 +450,7 @@ class DashboardListScreen extends ConsumerWidget {
                             ref,
                             'Energy Meter',
                             Icons.bolt_rounded.codePoint,
-                            Colors.yellow.shade800.value,
+                            Colors.yellow.shade800.toARGB32(),
                             [
                               // Row 1: Voltage & Current
                               PanelWidgetConfig(
@@ -460,7 +460,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 200,
                                 maxValue: 240,
                                 unit: 'V',
-                                colorValue: Colors.yellow.shade700.value,
+                                colorValue: Colors.yellow.shade700.toARGB32(),
                                 x: 0,
                                 y: 0,
                                 width: 4,
@@ -473,7 +473,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 20,
                                 unit: 'A',
-                                colorValue: Colors.blue.value,
+                                colorValue: Colors.blue.toARGB32(),
                                 x: 4,
                                 y: 0,
                                 width: 4,
@@ -487,7 +487,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 5000,
                                 unit: 'W',
-                                colorValue: Colors.red.value,
+                                colorValue: Colors.red.toARGB32(),
                                 x: 0,
                                 y: 3,
                                 width: 8,
@@ -509,7 +509,7 @@ class DashboardListScreen extends ConsumerWidget {
                             ref,
                             'Server Room',
                             Icons.dns_rounded.codePoint,
-                            Colors.purple.value,
+                            Colors.purple.toARGB32(),
                             [
                               // Row 1: Temp & UPS
                               PanelWidgetConfig(
@@ -519,7 +519,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 15,
                                 maxValue: 35,
                                 unit: '°C',
-                                colorValue: Colors.blue.value,
+                                colorValue: Colors.blue.toARGB32(),
                                 x: 0,
                                 y: 0,
                                 width: 4,
@@ -532,7 +532,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 minValue: 0,
                                 maxValue: 100,
                                 unit: '%',
-                                colorValue: Colors.green.value,
+                                colorValue: Colors.green.toARGB32(),
                                 x: 4,
                                 y: 0,
                                 width: 4,
@@ -543,7 +543,7 @@ class DashboardListScreen extends ConsumerWidget {
                                 title: 'Main Power',
                                 type: WidgetType.text,
                                 subscribeTopic: 'server/power/source',
-                                colorValue: Colors.amber.value,
+                                colorValue: Colors.amber.toARGB32(),
                                 x: 0,
                                 y: 3,
                                 width: 4,
@@ -574,18 +574,18 @@ class DashboardListScreen extends ConsumerWidget {
   }) {
     return Card(
       elevation: 0,
-      color: color.withOpacity(0.05),
+      color: color.withValues(alpha: 0.05),
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withOpacity(0.1)),
+        side: BorderSide(color: color.withValues(alpha: 0.1)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color, size: 28),
@@ -674,7 +674,7 @@ class _DashboardPremiumCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), // Subtle shadow
+            color: Colors.black.withValues(alpha: 0.04), // Subtle shadow
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -695,10 +695,10 @@ class _DashboardPremiumCard extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),
@@ -853,7 +853,7 @@ class _DashboardFormDialogState extends State<_DashboardFormDialog> {
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _selectedIconCode =
         widget.initialIconCode ?? Icons.dashboard_rounded.codePoint;
-    _selectedColorValue = widget.initialColorValue ?? Colors.blue.value;
+    _selectedColorValue = widget.initialColorValue ?? Colors.blue.toARGB32();
   }
 
   @override
@@ -938,7 +938,7 @@ class _DashboardFormDialogState extends State<_DashboardFormDialog> {
                                 color: isSelected
                                     ? Color(
                                         _selectedColorValue,
-                                      ).withOpacity(0.2)
+                                      ).withValues(alpha: 0.2)
                                     : null,
                                 borderRadius: BorderRadius.circular(8),
                                 border: isSelected
@@ -947,7 +947,7 @@ class _DashboardFormDialogState extends State<_DashboardFormDialog> {
                                         width: 2,
                                       )
                                     : Border.all(
-                                        color: theme.dividerColor.withOpacity(
+                                        color: theme.dividerColor.withValues(alpha: 
                                           0.3,
                                         ),
                                       ),
@@ -980,9 +980,9 @@ class _DashboardFormDialogState extends State<_DashboardFormDialog> {
             spacing: 12,
             runSpacing: 12,
             children: _availableColors.map((color) {
-              final isSelected = color.value == _selectedColorValue;
+              final isSelected = color.toARGB32() == _selectedColorValue;
               return GestureDetector(
-                onTap: () => setState(() => _selectedColorValue = color.value),
+                onTap: () => setState(() => _selectedColorValue = color.toARGB32()),
                 child: Container(
                   width: 36,
                   height: 36,
@@ -997,7 +997,7 @@ class _DashboardFormDialogState extends State<_DashboardFormDialog> {
                         : null,
                     boxShadow: [
                       BoxShadow(
-                        color: color.withOpacity(0.4),
+                        color: color.withValues(alpha: 0.4),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),

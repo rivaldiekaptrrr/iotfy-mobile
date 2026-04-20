@@ -74,7 +74,7 @@ class _ButtonPanelState extends ConsumerState<ButtonPanel> {
                               (isConnected
                                       ? widget.config.color
                                       : scheme.outline)
-                                  .withOpacity(0.1),
+                                  .withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                           boxShadow: _isPressed
                               ? [] // No shadow when pressed (simulates being pushed in)
@@ -84,7 +84,7 @@ class _ButtonPanelState extends ConsumerState<ButtonPanel> {
                                         (isConnected
                                                 ? widget.config.color
                                                 : Colors.black)
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -118,7 +118,7 @@ class _ButtonPanelState extends ConsumerState<ButtonPanel> {
                           ),
                           decoration: BoxDecoration(
                             color: (isError ? Colors.red : Colors.grey)
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(

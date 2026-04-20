@@ -7,7 +7,6 @@ import 'package:latlong2/latlong.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class MapPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -41,10 +40,13 @@ class _MapPanelState extends ConsumerState<MapPanel> {
   // GPS Data tambahan
   double _speedKmh = 0.0;
   double _course = 0.0;  // Heading dalam derajat (0-360)
+// ignore: unused_field
   double _altitude = 0.0;
   int _satellites = 0;
+// ignore: unused_field
   double _hdop = 0.0;
   bool _hasFix = false;
+// ignore: unused_field
   String? _timestamp;
   
   // Historical Playback Mode
@@ -232,7 +234,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -459,7 +461,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                       Polyline(
                         points: _isPlayingHistory ? _historyPath : _path,
                         color: _isPlayingHistory 
-                            ? widget.config.color.withOpacity(0.6) 
+                            ? widget.config.color.withValues(alpha: 0.6) 
                             : widget.config.color,
                         strokeWidth: 4.0,
                       ),
@@ -506,11 +508,11 @@ class _MapPanelState extends ConsumerState<MapPanel> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.9),
+              color: theme.colorScheme.surface.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                 ),
               ],
@@ -542,8 +544,8 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: _isPlayingHistory 
-                          ? Colors.orange.withOpacity(0.2) 
-                          : widget.config.color.withOpacity(0.2),
+                          ? Colors.orange.withValues(alpha: 0.2) 
+                          : widget.config.color.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -575,7 +577,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
                               '(${_path.length})',
                               style: TextStyle(
                                 fontSize: 8,
-                                color: widget.config.color.withOpacity(0.7),
+                                color: widget.config.color.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -596,7 +598,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
             child: Material(
               color: _isPlayingHistory 
                   ? Colors.orange 
-                  : theme.colorScheme.surface.withOpacity(0.9),
+                  : theme.colorScheme.surface.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(8),
               elevation: 2,
               child: InkWell(
@@ -626,8 +628,8 @@ class _MapPanelState extends ConsumerState<MapPanel> {
           right: 48,
           child: Material(
             color: _isMovingMode 
-                ? widget.config.color.withOpacity(0.9)
-                : theme.colorScheme.surface.withOpacity(0.9),
+                ? widget.config.color.withValues(alpha: 0.9)
+                : theme.colorScheme.surface.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(8),
             elevation: 2,
             child: InkWell(
@@ -656,7 +658,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
           top: 8,
           right: 8,
           child: Material(
-            color: theme.colorScheme.surface.withOpacity(0.9),
+            color: theme.colorScheme.surface.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(8),
             elevation: 2,
             child: InkWell(
@@ -687,7 +689,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
+                color: Colors.black.withValues(alpha: 0.75),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -753,11 +755,11 @@ class _MapPanelState extends ConsumerState<MapPanel> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.9),
+                  color: Colors.orange.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 8,
                     ),
                   ],
@@ -786,7 +788,7 @@ class _MapPanelState extends ConsumerState<MapPanel> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.7),
+                color: theme.colorScheme.surface.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
@@ -876,10 +878,13 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
   // GPS Data tambahan
   double _speedKmh = 0.0;
   double _course = 0.0;
+// ignore: unused_field
   double _altitude = 0.0;
   int _satellites = 0;
+// ignore: unused_field
   double _hdop = 0.0;
   bool _hasFix = false;
+// ignore: unused_field
   String? _timestamp;
   
   // Historical Playback Mode
@@ -1104,7 +1109,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -1277,7 +1282,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -1331,8 +1336,8 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _isPlayingHistory 
-                      ? Colors.orange.withOpacity(0.2)
-                      : widget.config.color.withOpacity(0.2),
+                      ? Colors.orange.withValues(alpha: 0.2)
+                      : widget.config.color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Row(
@@ -1364,7 +1369,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                           '(${_path.length})',
                           style: TextStyle(
                             fontSize: 9,
-                            color: widget.config.color.withOpacity(0.7),
+                            color: widget.config.color.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -1386,7 +1391,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
               decoration: BoxDecoration(
                 color: _isPlayingHistory 
                     ? Colors.orange 
-                    : Colors.orange.withOpacity(0.2),
+                    : Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: IconButton(
@@ -1403,7 +1408,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: _isMovingMode 
-                  ? widget.config.color.withOpacity(0.2)
+                  ? widget.config.color.withValues(alpha: 0.2)
                   : theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -1455,7 +1460,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                       Polyline(
                         points: _isPlayingHistory ? _historyPath : _path,
                         color: _isPlayingHistory 
-                            ? widget.config.color.withOpacity(0.6) 
+                            ? widget.config.color.withValues(alpha: 0.6) 
                             : widget.config.color,
                         strokeWidth: 5.0,
                       ),
@@ -1501,11 +1506,11 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.95),
+                color: theme.colorScheme.surface.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                   ),
                 ],
@@ -1543,7 +1548,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _hasFix ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                          color: _hasFix ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -1571,7 +1576,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: widget.config.color.withOpacity(0.1),
+                            color: widget.config.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -1639,7 +1644,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 8,
                     ),
                   ],
@@ -1676,7 +1681,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 6,
                         ),
                       ],
@@ -1698,7 +1703,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 6,
                       ),
                     ],
@@ -1733,7 +1738,7 @@ class _FullscreenMapViewState extends ConsumerState<FullscreenMapView> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 6,
                       ),
                     ],

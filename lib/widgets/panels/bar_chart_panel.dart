@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class BarChartPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -67,7 +66,7 @@ class _BarChartPanelState extends ConsumerState<BarChartPanel> {
                 backDrawRodData: BackgroundBarChartRodData(
                   show: true,
                   toY: widget.config.maxValue ?? 100,
-                  color: widget.config.color.withOpacity(0.1),
+                  color: widget.config.color.withValues(alpha: 0.1),
                 ),
               ),
             ],
@@ -119,7 +118,7 @@ class _BarChartPanelState extends ConsumerState<BarChartPanel> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.bar_chart, size: 32, color: scheme.outline.withOpacity(0.5)),
+                        Icon(Icons.bar_chart, size: 32, color: scheme.outline.withValues(alpha: 0.5)),
                         const SizedBox(height: 8),
                         Text(
                           'Waiting for data...',

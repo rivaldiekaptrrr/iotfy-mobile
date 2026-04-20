@@ -277,7 +277,7 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
           Expanded(
             child: Container(
               height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.3),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
             ),
           ),
           Padding(
@@ -293,7 +293,7 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
           Expanded(
             child: Container(
               height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.3),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
             ),
           ),
         ],
@@ -304,7 +304,7 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
   Widget _buildCertificateTypeSelector() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.5)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(16),
@@ -381,12 +381,12 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected 
-            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
             : Colors.transparent,
           border: Border.all(
             color: isSelected 
               ? Theme.of(context).colorScheme.primary
-              : Colors.grey.withOpacity(0.5),
+              : Colors.grey.withValues(alpha: 0.5),
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -425,7 +425,7 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
   Widget _buildCertificateUploadSection() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.5)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(16),
@@ -470,9 +470,9 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
+                color: Colors.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
@@ -503,7 +503,7 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -531,7 +531,7 @@ class _BrokerFormScreenState extends ConsumerState<BrokerFormScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.5)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

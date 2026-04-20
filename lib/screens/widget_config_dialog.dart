@@ -144,7 +144,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<WidgetType>(
-                          value: _selectedType,
+                          initialValue: _selectedType,
                           decoration: const InputDecoration(
                             labelText: 'Widget Type',
                             border: OutlineInputBorder(),
@@ -536,13 +536,13 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? _selectedColor.withOpacity(0.2)
-                                        : Colors.grey.withOpacity(0.1),
+                                        ? _selectedColor.withValues(alpha: 0.2)
+                                        : Colors.grey.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: isSelected
                                           ? _selectedColor
-                                          : Colors.grey.withOpacity(0.3),
+                                          : Colors.grey.withValues(alpha: 0.3),
                                       width: isSelected ? 3 : 1,
                                     ),
                                   ),
@@ -588,7 +588,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
                     const SizedBox(height: 16),
                   ],
                   DropdownButtonFormField<int>(
-                    value: _qos,
+                    initialValue: _qos,
                     decoration: const InputDecoration(
                       labelText: 'QoS Level',
                       border: OutlineInputBorder(),
@@ -796,7 +796,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: _selectedColor.withOpacity(0.15),
+              backgroundColor: _selectedColor.withValues(alpha: 0.15),
               child: Icon(
                 IconHelper.getIcon(_selectedIconCodePoint) ?? Icons.widgets,
                 color: _selectedColor,
@@ -824,7 +824,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _selectedColor.withOpacity(0.1),
+                color: _selectedColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -854,11 +854,11 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         height: 50,
         decoration: BoxDecoration(
           color: isSelected
-              ? _selectedColor.withOpacity(0.2)
-              : Colors.grey.withOpacity(0.1),
+              ? _selectedColor.withValues(alpha: 0.2)
+              : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? _selectedColor : Colors.grey.withOpacity(0.3),
+            color: isSelected ? _selectedColor : Colors.grey.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -1011,7 +1011,7 @@ class _WidgetConfigDialogState extends State<WidgetConfigDialog> {
         onPayload: _onPayloadController.text,
         offPayload: _offPayloadController.text,
         qos: _qos,
-        colorValue: _selectedColor.value,
+        colorValue: _selectedColor.toARGB32(),
         iconCodePoint: _selectedIconCodePoint,
         minValue: minValue,
         maxValue: maxValue,

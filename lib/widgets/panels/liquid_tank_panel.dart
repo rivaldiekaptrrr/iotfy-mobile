@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class LiquidTankPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -114,9 +113,9 @@ class _LiquidTankPanelState extends ConsumerState<LiquidTankPanel>
                         end: Alignment.bottomRight,
                         colors: [
                           Theme.of(context).colorScheme.surfaceContainerHighest
-                              .withOpacity(0.1),
+                              .withValues(alpha: 0.1),
                           Theme.of(context).colorScheme.surfaceContainerHighest
-                              .withOpacity(0.3),
+                              .withValues(alpha: 0.3),
                         ],
                       ),
                     ),
@@ -132,7 +131,7 @@ class _LiquidTankPanelState extends ConsumerState<LiquidTankPanel>
                             width: 10,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -158,7 +157,7 @@ class _LiquidTankPanelState extends ConsumerState<LiquidTankPanel>
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          widget.config.color.withOpacity(0.7),
+                                          widget.config.color.withValues(alpha: 0.7),
                                           widget.config.color,
                                         ],
                                       ),

@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Encryption Service untuk menyimpan data sensitif
@@ -65,7 +65,7 @@ class EncryptionService {
       final combined = '$_salt:$masterKey:$plainText';
       return _obfuscate(combined);
     } catch (e) {
-      print('[ENCRYPTION] Encryption error: $e');
+      debugPrint('[ENCRYPTION] Encryption error: $e');
       return '';
     }
   }
@@ -83,7 +83,7 @@ class EncryptionService {
       
       return parts.sublist(2).join(':');
     } catch (e) {
-      print('[ENCRYPTION] Decryption error: $e');
+      debugPrint('[ENCRYPTION] Decryption error: $e');
       return '';
     }
   }
@@ -101,7 +101,7 @@ class EncryptionService {
       final combined = '$_salt:$masterKey:${base64Encode(fileBytes)}';
       return _obfuscate(combined);
     } catch (e) {
-      print('[ENCRYPTION] File encryption error: $e');
+      debugPrint('[ENCRYPTION] File encryption error: $e');
       return '';
     }
   }
@@ -117,7 +117,7 @@ class EncryptionService {
       
       return base64Decode(parts.sublist(2).join(':'));
     } catch (e) {
-      print('[ENCRYPTION] File decryption error: $e');
+      debugPrint('[ENCRYPTION] File decryption error: $e');
       return Uint8List(0);
     }
   }

@@ -17,10 +17,12 @@ class LineChartPanel extends ConsumerStatefulWidget {
 
 class _LineChartPanelState extends ConsumerState<LineChartPanel> {
   final List<FlSpot> _dataPoints = [];
+  // ignore: unused_field
   String? _error;
   int _xCounter = 0;
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
   double? _lastValue;
+  // ignore: unused_field
   DateTime? _lastUpdated;
   String? _currentValueDisplay;
 
@@ -56,7 +58,6 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
   @override
   Widget build(BuildContext context) {
     final connectionStatus = ref.watch(connectionStatusProvider);
-    final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
@@ -94,7 +95,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: lineColor.withOpacity(0.1),
+                      color: lineColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -116,7 +117,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.show_chart, size: 32, color: scheme.outline.withOpacity(0.5)),
+                          Icon(Icons.show_chart, size: 32, color: scheme.outline.withValues(alpha: 0.5)),
                           const SizedBox(height: 8),
                           Text(
                             'Waiting for data...',
@@ -133,7 +134,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                           horizontalInterval: ((widget.config.maxValue ?? 100) - (widget.config.minValue ?? 0)) / 4,
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
-                              color: scheme.outlineVariant.withOpacity(0.5),
+                              color: scheme.outlineVariant.withValues(alpha: 0.5),
                               strokeWidth: 1,
                               dashArray: [5, 5],
                             );
@@ -170,7 +171,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                             if (widget.config.warningThreshold != null)
                               HorizontalLine(
                                 y: widget.config.warningThreshold!,
-                                color: Colors.orange.withOpacity(0.8),
+                                color: Colors.orange.withValues(alpha: 0.8),
                                 strokeWidth: 1,
                                 dashArray: [10, 5],
                                 label: HorizontalLineLabel(
@@ -184,7 +185,7 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                             if (widget.config.criticalThreshold != null)
                               HorizontalLine(
                                 y: widget.config.criticalThreshold!,
-                                color: Colors.red.withOpacity(0.8),
+                                color: Colors.red.withValues(alpha: 0.8),
                                 strokeWidth: 1,
                                 dashArray: [10, 5],
                                 label: HorizontalLineLabel(
@@ -210,8 +211,8 @@ class _LineChartPanelState extends ConsumerState<LineChartPanel> {
                               show: true,
                               gradient: LinearGradient(
                                 colors: [
-                                  lineColor.withOpacity(0.3),
-                                  lineColor.withOpacity(0.0),
+                                  lineColor.withValues(alpha: 0.3),
+                                  lineColor.withValues(alpha: 0.0),
                                 ],
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,

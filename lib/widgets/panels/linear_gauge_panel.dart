@@ -4,7 +4,6 @@ import 'package:syncfusion_flutter_gauges/gauges.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class LinearGaugePanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -17,6 +16,7 @@ class LinearGaugePanel extends ConsumerStatefulWidget {
 
 class _LinearGaugePanelState extends ConsumerState<LinearGaugePanel> {
   double _currentValue = 0;
+  // ignore: unused_field
   String? _error;
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
 

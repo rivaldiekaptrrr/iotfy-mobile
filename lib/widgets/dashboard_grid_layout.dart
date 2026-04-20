@@ -30,15 +30,22 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
 
   // Temporary state for dragging/resizing
   String? _activeWidgetId;
+// ignore: unused_field
   Offset? _dragOffset;
+// ignore: unused_field
   Offset? _resizeOffset;
   PanelWidgetConfig? _activeConfig;
+// ignore: unused_field
   bool _isResizing = false;
   
   // Drag start position to calculate delta
+// ignore: unused_field
   double? _startX;
+// ignore: unused_field
   double? _startY;
+// ignore: unused_field
   double? _startWidth;
+// ignore: unused_field
   double? _startHeight;
 
   @override
@@ -94,7 +101,7 @@ class _DashboardGridLayoutState extends State<DashboardGridLayout> {
           cellWidth: cellWidth,
           cellHeight: cellHeight,
           spacing: gridSpacing,
-          color: Theme.of(context).dividerColor.withOpacity(0.05), // Lighter grid
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.05), // Lighter grid
         ),
       ),
     );

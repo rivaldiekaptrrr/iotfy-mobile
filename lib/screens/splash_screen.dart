@@ -58,10 +58,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => currentDashboard != null 
+          pageBuilder: (_, _, _) => currentDashboard != null 
               ? const DashboardScreen() 
               : const BrokerListScreen(),
-          transitionsBuilder: (_, animation, __, child) {
+          transitionsBuilder: (_, animation, _, child) {
             return FadeTransition(opacity: animation, child: child);
           },
           transitionDuration: const Duration(milliseconds: 500),
@@ -102,7 +102,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1), // Soft background circle
+                    color: primaryColor.withValues(alpha: 0.1), // Soft background circle
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -155,7 +155,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
                   valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  backgroundColor: primaryColor.withOpacity(0.1),
+                  backgroundColor: primaryColor.withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -167,7 +167,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
               child: Text(
                 'v1.0.0',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
               ),
             ),

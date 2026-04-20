@@ -65,7 +65,6 @@ class _SliderPanelState extends ConsumerState<SliderPanel> {
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
     final lastError = ref.read(mqttServiceProvider).lastError;
-    final scheme = Theme.of(context).colorScheme;
 
     final minValue = widget.config.minValue ?? 0;
     final maxValue = widget.config.maxValue ?? 100;
@@ -109,9 +108,9 @@ class _SliderPanelState extends ConsumerState<SliderPanel> {
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: widget.config.color,
-                      inactiveTrackColor: widget.config.color.withOpacity(0.2),
+                      inactiveTrackColor: widget.config.color.withValues(alpha: 0.2),
                       thumbColor: widget.config.color,
-                      overlayColor: widget.config.color.withOpacity(0.1),
+                      overlayColor: widget.config.color.withValues(alpha: 0.1),
                       trackHeight: 4.0 + (minDimension * 0.01), // Responsive track thickness
                       thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8.0 + (minDimension * 0.01)),
                     ),
@@ -144,7 +143,7 @@ class _SliderPanelState extends ConsumerState<SliderPanel> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (isError ? Colors.red : Colors.grey).withOpacity(0.1),
+                      color: (isError ? Colors.red : Colors.grey).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

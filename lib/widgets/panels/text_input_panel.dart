@@ -105,7 +105,7 @@ class _TextInputPanelState extends ConsumerState<TextInputPanel> {
                     filled: true,
                     fillColor: Theme.of(
                       context,
-                    ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   ),
                   onSubmitted: (_) => _publishMessage(),
                 ),

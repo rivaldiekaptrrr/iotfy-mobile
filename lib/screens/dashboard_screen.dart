@@ -1,4 +1,4 @@
-import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -51,6 +51,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
     with WidgetsBindingObserver {
   bool _isEditMode = false;
+  // ignore: unused_field
   final double _gridSpacing = 16;
   final double _gridPadding = 20;
 
@@ -72,10 +73,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
     if (state == AppLifecycleState.resumed) {
       // App kembali dari background, check MQTT connection
-      print('[LIFECYCLE] App resumed, checking MQTT connection...');
+      debugPrint('[LIFECYCLE] App resumed, checking MQTT connection...');
       _checkAndReconnectMqtt();
     } else if (state == AppLifecycleState.paused) {
-      print('[LIFECYCLE] App paused (background)');
+      debugPrint('[LIFECYCLE] App paused (background)');
     }
   }
 
@@ -88,7 +89,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       // Ping test dengan subscribe ulang semua widget topics
       final dashboard = ref.read(currentDashboardProvider);
       if (dashboard != null) {
-        print(
+        debugPrint(
           '[LIFECYCLE] Resubscribing ${dashboard.widgets.length} widget topics...',
         );
         for (var widget in dashboard.widgets) {
@@ -99,7 +100,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       }
     } else if (connectionStatus.value == ConnectionStatus.disconnected) {
       // Auto reconnect jika disconnected
-      print('[LIFECYCLE] Connection lost, will auto-reconnect...');
+      debugPrint('[LIFECYCLE] Connection lost, will auto-reconnect...');
     }
   }
 
@@ -223,17 +224,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: isConnected
-                    ? Colors.green.withOpacity(0.1)
+                    ? Colors.green.withValues(alpha: 0.1)
                     : isError
-                    ? Colors.red.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isConnected
-                      ? Colors.green.withOpacity(0.5)
+                      ? Colors.green.withValues(alpha: 0.5)
                       : isError
-                      ? Colors.red.withOpacity(0.5)
-                      : Colors.grey.withOpacity(0.5),
+                      ? Colors.red.withValues(alpha: 0.5)
+                      : Colors.grey.withValues(alpha: 0.5),
                   width: 1,
                 ),
               ),
@@ -303,7 +304,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               decoration: BoxDecoration(
                 color: Theme.of(
                   context,
-                ).colorScheme.primaryContainer.withOpacity(0.4),
+                ).colorScheme.primaryContainer.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -372,7 +373,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         color: Theme.of(context).colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -493,6 +494,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     if (selectedType == null) return; // Cancelled
 
     // 2. Open Config Dialog with pre-selected type
+    if (!mounted) return;
     final config = await showDialog<PanelWidgetConfig>(
       context: context,
       builder: (_) => WidgetConfigDialog(preSelectedType: selectedType),
@@ -688,7 +690,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     final entries = mqttService.logBuffer;
 
                     // Listen to stream for rebuild trigger only
-                    ref.listen(mqttLogsProvider, (_, __) {});
+                    ref.listen(mqttLogsProvider, (_, _) {});
 
                     return entries.isEmpty
                         ? const Center(
@@ -700,7 +702,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         : ListView.separated(
                             padding: const EdgeInsets.all(16),
                             itemCount: entries.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final entry = entries[entries.length - 1 - index];
@@ -729,7 +731,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: color.withOpacity(0.1),
+                                            color: color.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                               4,
                                             ),
@@ -797,7 +799,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -888,15 +890,15 @@ class PanelContainer extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
             border: Border.all(
               color: isEditMode
-                  ? theme.colorScheme.primary.withOpacity(0.5)
-                  : theme.dividerColor.withOpacity(0.1),
+                  ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                  : theme.dividerColor.withValues(alpha: 0.1),
               width: isEditMode ? 2 : 1,
             ),
           ),

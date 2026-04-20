@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class KnobPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -23,6 +22,7 @@ class _KnobPanelState extends ConsumerState<KnobPanel> {
     _currentValue = widget.config.minValue ?? 0;
   }
 
+  // ignore: unused_element
   void _updateValue(double angle) {
      // Convert angle (radians) to value
      // Angle 0 is top. We map -135deg to +135deg (total 270)
@@ -108,6 +108,7 @@ class _KnobWidget extends StatefulWidget {
 
 class _KnobWidgetState extends State<_KnobWidget> {
   
+  // ignore: unused_element
   void _handlePan(Offset localPos, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final dx = localPos.dx - center.dx;
@@ -200,11 +201,6 @@ class _KnobPainter extends CustomPainter {
     // Total range 270.
     
     double percent = (value - min) / (max - min);
-    double startAngle = -math.pi * 0.75; // -135 from vertical up? 
-    // Normal circle: 0 is Right, -pi/2 is Top.
-    // We want Start at -225 deg (from 0? no)
-    // Let's just do math.pi * 0.75 (135) to math.pi * 2.25 (405)
-    
     double totalAngle = math.pi * 1.5; // 270deg
     double angle = (math.pi * 0.75) + (percent * totalAngle); // Start at 135 deg (bottom left)
     

@@ -229,7 +229,7 @@ class _RulesTab extends ConsumerWidget {
       icon: Icon(icon, size: 16),
       label: Text(label),
       style: FilledButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         foregroundColor: color,
         elevation: 0,
       ),
@@ -250,9 +250,9 @@ class _RulesTab extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -613,7 +613,7 @@ class _RuleCard extends ConsumerWidget {
               (w) => w.id == action.targetWidgetId,
             );
             widgetName = widget.title;
-          } catch (e) {}
+          } catch (e) { /* ignore */ }
         }
         return 'Set "$widgetName" → ${action.targetPayload}';
     }
@@ -656,9 +656,9 @@ class _TriggerBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -711,14 +711,14 @@ class _ActivityLogTab extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: logs.length,
-      separatorBuilder: (_, __) => const Divider(),
+      separatorBuilder: (_, _) => const Divider(),
       itemBuilder: (context, index) {
         final log = logs[index];
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: log.isSuccess
-                ? Colors.green.withOpacity(0.1)
-                : Colors.red.withOpacity(0.1),
+                ? Colors.green.withValues(alpha: 0.1)
+                : Colors.red.withValues(alpha: 0.1),
             child: Icon(
               log.isSuccess ? Icons.check : Icons.error,
               color: log.isSuccess ? Colors.green : Colors.red,

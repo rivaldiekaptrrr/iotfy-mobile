@@ -20,6 +20,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
   double _currentValue = 0;
   String? _error;
   late final ProviderSubscription<AsyncValue<app_mqtt.MqttMessageData>> _messageSub;
+  // ignore: unused_field
   DateTime? _lastUpdated;
   double? _lastValue;
   bool _showShimmer = true;
@@ -68,7 +69,6 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
     final connectionStatus = ref.watch(connectionStatusProvider);
     final isConnected = connectionStatus.value == ConnectionStatus.connected;
     final isError = connectionStatus.value == ConnectionStatus.error;
-    final lastError = ref.read(mqttServiceProvider).lastError;
     final scheme = Theme.of(context).colorScheme;
     final isLoading = isConnected && _lastValue == null && _error == null && _showShimmer;
 
@@ -162,7 +162,7 @@ class _GaugePanelState extends ConsumerState<GaugePanel> {
                             Text(
                               'Waiting for data from:\n${widget.config.subscribeTopic}',
                               style: TextStyle(
-                                color: Colors.grey.withOpacity(0.7),
+                                color: Colors.grey.withValues(alpha: 0.7),
                                 fontSize: 10,
                               ),
                               textAlign: TextAlign.center,

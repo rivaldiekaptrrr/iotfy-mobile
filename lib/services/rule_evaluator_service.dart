@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/rule_config.dart';
 import '../models/mqtt_message.dart';
@@ -7,7 +8,6 @@ import '../providers/mqtt_providers.dart';
 import '../providers/storage_providers.dart';
 import '../providers/rule_providers.dart';
 import '../providers/alarm_providers.dart';
-import '../services/mqtt_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../providers/rule_activity_provider.dart';
 
@@ -43,14 +43,14 @@ class RuleEvaluatorService {
       );
 
       await _notificationsPlugin.initialize(initializationSettings);
-      print('[NOTIFICATION] Initialized successfully');
+      debugPrint('[NOTIFICATION] Initialized successfully');
     } catch (e) {
-      print('[NOTIFICATION] Init failed (platform may not support): $e');
+      debugPrint('[NOTIFICATION] Init failed (platform may not support): $e');
     }
   }
 
   void _startListening() {
-    print('[RULE SERVICE] Starting to listen for MQTT messages...');
+    debugPrint('[RULE SERVICE] Starting to listen for MQTT messages...');
 
     // Listen to MQTT messages
     ref.listen<AsyncValue<MqttMessageData>>(mqttMessagesProvider, (
@@ -58,38 +58,38 @@ class RuleEvaluatorService {
       next,
     ) {
       next.whenData((message) {
-        print(
+        debugPrint(
           '[RULE SERVICE] 📨 Received MQTT: topic=${message.topic}, payload=${message.payload}',
         );
         _evaluateRulesForMessage(message);
       });
     });
 
-    print('[RULE SERVICE] ✅ Listener registered');
+    debugPrint('[RULE SERVICE] ✅ Listener registered');
   }
 
   void _evaluateRulesForMessage(MqttMessageData message) {
-    print('[RULE EVAL] ===== Message Received =====');
-    print('[RULE EVAL] Topic: ${message.topic}');
-    print('[RULE EVAL] Payload: ${message.payload}');
+    debugPrint('[RULE EVAL] ===== Message Received =====');
+    debugPrint('[RULE EVAL] Topic: ${message.topic}');
+    debugPrint('[RULE EVAL] Payload: ${message.payload}');
 
     final dashboard = ref.read(currentDashboardProvider);
     if (dashboard == null) {
-      print('[RULE EVAL] ❌ No dashboard, skipping');
+      debugPrint('[RULE EVAL] ❌ No dashboard, skipping');
       return;
     }
 
-    print('[RULE EVAL] Dashboard: ${dashboard.name}');
+    debugPrint('[RULE EVAL] Dashboard: ${dashboard.name}');
 
     // Get active rules for current dashboard
     final rules = ref
         .read(ruleConfigsProvider.notifier)
         .getActiveRulesForDashboard(dashboard.id);
 
-    print('[RULE EVAL] Active rules count: ${rules.length}');
+    debugPrint('[RULE EVAL] Active rules count: ${rules.length}');
 
     if (rules.isEmpty) {
-      print('[RULE EVAL] ⚠️ No active rules, skipping');
+      debugPrint('[RULE EVAL] ⚠️ No active rules, skipping');
       return;
     }
 
@@ -98,12 +98,12 @@ class RuleEvaluatorService {
       (w) => w.subscribeTopic == message.topic,
     );
 
-    print(
+    debugPrint(
       '[RULE EVAL] Widgets subscribed to this topic: ${sourceWidgets.length}',
     );
 
     if (sourceWidgets.isEmpty) {
-      print('[RULE EVAL] ⚠️ No widget subscribes to topic: ${message.topic}');
+      debugPrint('[RULE EVAL] ⚠️ No widget subscribes to topic: ${message.topic}');
       return;
     }
 
@@ -112,14 +112,14 @@ class RuleEvaluatorService {
     final value = double.tryParse(payloadClean);
 
     if (value == null) {
-      print('[RULE EVAL] ❌ Failed to parse payload as double: "$payloadClean"');
+      debugPrint('[RULE EVAL] ❌ Failed to parse payload as double: "$payloadClean"');
       return;
     }
 
-    print('[RULE EVAL] ✅ Parsed value: $value');
+    debugPrint('[RULE EVAL] ✅ Parsed value: $value');
 
     for (final widget in sourceWidgets) {
-      print('[RULE EVAL] Checking widget: ${widget.title} (${widget.id})');
+      debugPrint('[RULE EVAL] Checking widget: ${widget.title} (${widget.id})');
 
       // Get all rules for this widget (widgetValue OR manual)
       final widgetRules = rules
@@ -131,17 +131,17 @@ class RuleEvaluatorService {
           )
           .toList();
 
-      print('[RULE EVAL] Rules for this widget: ${widgetRules.length}');
+      debugPrint('[RULE EVAL] Rules for this widget: ${widgetRules.length}');
 
       if (widgetRules.isNotEmpty) {
         for (final rule in widgetRules) {
-          print(
+          debugPrint(
             '[RULE EVAL] 🔍 Found rule: ${rule.name} (${rule.triggerType})',
           );
 
           // For manual triggers: execute immediately on any state change
           if (rule.triggerType == RuleTriggerType.manual) {
-            print(
+            debugPrint(
               '[RULE EVAL] 👆 Manual trigger - executing without condition check',
             );
             _executeActions(rule, value, widget);
@@ -159,7 +159,7 @@ class RuleEvaluatorService {
     final rule = ref.read(ruleConfigsProvider.notifier).getRule(ruleId);
     if (rule == null || !rule.isActive) return;
 
-    print('[RULE] Manually triggering rule: ${rule.name}');
+    debugPrint('[RULE] Manually triggering rule: ${rule.name}');
     _executeActions(rule, null, null);
 
     // Record trigger
@@ -171,10 +171,10 @@ class RuleEvaluatorService {
     double currentValue,
     PanelWidgetConfig sourceWidget,
   ) {
-    print('[EVAL] ===== Evaluating Rule: ${rule.name} =====');
-    print('[EVAL] Current Value: $currentValue');
-    print('[EVAL] Threshold: ${rule.thresholdValue}');
-    print('[EVAL] Operator: ${rule.getOperatorSymbol()}');
+    debugPrint('[EVAL] ===== Evaluating Rule: ${rule.name} =====');
+    debugPrint('[EVAL] Current Value: $currentValue');
+    debugPrint('[EVAL] Threshold: ${rule.thresholdValue}');
+    debugPrint('[EVAL] Operator: ${rule.getOperatorSymbol()}');
 
     final alarmNotifier = ref.read(alarmEventsProvider.notifier);
     final existingAlarm = alarmNotifier.getActiveAlarmForRule(rule.id);
@@ -182,12 +182,12 @@ class RuleEvaluatorService {
     // Check if condition is met
     final conditionMet = rule.evaluateCondition(currentValue);
 
-    print(
+    debugPrint(
       '[EVAL] Condition "$currentValue ${rule.getOperatorSymbol()} ${rule.thresholdValue}" = $conditionMet',
     );
 
     if (conditionMet) {
-      print('[EVAL] ✅ Condition MET!');
+      debugPrint('[EVAL] ✅ Condition MET!');
 
       // Debounce check for alarm creation
       final lastTrigger = _lastTriggerTimes[rule.id];
@@ -197,7 +197,7 @@ class RuleEvaluatorService {
               DateTime.now().difference(lastTrigger).inSeconds >= 5);
 
       if (shouldCreateAlarm) {
-        print('[EVAL] Creating new alarm...');
+        debugPrint('[EVAL] Creating new alarm...');
 
         // Create new alarm
         final alarm = AlarmEvent(
@@ -212,31 +212,31 @@ class RuleEvaluatorService {
         );
 
         alarmNotifier.addAlarm(alarm);
-        print('[EVAL] ✅ Alarm created');
+        debugPrint('[EVAL] ✅ Alarm created');
 
         // Record trigger time
         _lastTriggerTimes[rule.id] = DateTime.now();
         ref.read(ruleConfigsProvider.notifier).recordTrigger(rule.id);
       } else if (existingAlarm != null) {
-        print('[EVAL] ⚠️ Alarm already exists, skipping alarm creation');
+        debugPrint('[EVAL] ⚠️ Alarm already exists, skipping alarm creation');
       } else {
-        print(
+        debugPrint(
           '[EVAL] ⏱️ Alarm debounced (will create in ${5 - DateTime.now().difference(lastTrigger!).inSeconds}s)',
         );
       }
 
       // IMPORTANT: Execute actions ALWAYS when condition is met
       // This ensures control widget actions run every time, not just on alarm creation
-      print('[EVAL] 🚀 Executing actions (regardless of debounce)...');
+      debugPrint('[EVAL] 🚀 Executing actions (regardless of debounce)...');
       _executeActions(rule, currentValue, sourceWidget);
     } else {
-      print('[EVAL] ❌ Condition NOT met');
+      debugPrint('[EVAL] ❌ Condition NOT met');
 
       // Condition not met - clear alarm if exists and not acknowledged
       if (existingAlarm != null &&
           existingAlarm.status != AlarmStatus.acknowledged) {
         alarmNotifier.clearAlarm(existingAlarm.id);
-        print('[EVAL] Cleared existing alarm');
+        debugPrint('[EVAL] Cleared existing alarm');
       }
     }
 
@@ -248,12 +248,12 @@ class RuleEvaluatorService {
     double? currentValue,
     PanelWidgetConfig? sourceWidget,
   ) {
-    print(
+    debugPrint(
       '[EXEC] Executing ${rule.actions.length} actions for rule: ${rule.name}',
     );
 
     for (final action in rule.actions) {
-      print('[EXEC] Action type: ${action.type}');
+      debugPrint('[EXEC] Action type: ${action.type}');
 
       switch (action.type) {
         case RuleActionType.publishMqtt:
@@ -269,7 +269,7 @@ class RuleEvaluatorService {
           _logToHistory(rule, currentValue, sourceWidget);
           break;
         case RuleActionType.controlWidget:
-          print('[EXEC] Calling _controlWidget...');
+          debugPrint('[EXEC] Calling _controlWidget...');
           _controlWidget(action);
           break;
       }
@@ -277,18 +277,18 @@ class RuleEvaluatorService {
   }
 
   void _controlWidget(RuleAction action) {
-    print('[CONTROL] _controlWidget called');
-    print('[CONTROL] targetWidgetId: ${action.targetWidgetId}');
-    print('[CONTROL] targetPayload: ${action.targetPayload}');
+    debugPrint('[CONTROL] _controlWidget called');
+    debugPrint('[CONTROL] targetWidgetId: ${action.targetWidgetId}');
+    debugPrint('[CONTROL] targetPayload: ${action.targetPayload}');
 
     if (action.targetWidgetId == null || action.targetPayload == null) {
-      print('[CONTROL] ERROR: Missing targetWidgetId or targetPayload');
+      debugPrint('[CONTROL] ERROR: Missing targetWidgetId or targetPayload');
       return;
     }
 
     final dashboard = ref.read(currentDashboardProvider);
     if (dashboard == null) {
-      print('[CONTROL] ERROR: No dashboard found');
+      debugPrint('[CONTROL] ERROR: No dashboard found');
       return;
     }
 
@@ -298,17 +298,17 @@ class RuleEvaluatorService {
         orElse: () => throw Exception('Target widget not found'),
       );
 
-      print('[CONTROL] Found target widget: ${targetWidget.title}');
-      print('[CONTROL] Widget publishTopic: ${targetWidget.publishTopic}');
+      debugPrint('[CONTROL] Found target widget: ${targetWidget.title}');
+      debugPrint('[CONTROL] Widget publishTopic: ${targetWidget.publishTopic}');
 
       if (targetWidget.publishTopic != null) {
-        print('[CONTROL] Publishing to topic: ${targetWidget.publishTopic}');
-        print('[CONTROL] Payload: ${action.targetPayload}');
+        debugPrint('[CONTROL] Publishing to topic: ${targetWidget.publishTopic}');
+        debugPrint('[CONTROL] Payload: ${action.targetPayload}');
 
         final mqttService = ref.read(mqttServiceProvider);
         mqttService.publish(targetWidget.publishTopic!, action.targetPayload!);
 
-        print('[CONTROL] ✅ MQTT publish successful');
+        debugPrint('[CONTROL] ✅ MQTT publish successful');
 
         ref
             .read(ruleActivityProvider.notifier)
@@ -318,10 +318,10 @@ class RuleEvaluatorService {
                   'Controlled ${targetWidget.title} -> ${action.targetPayload}',
             );
       } else {
-        print('[CONTROL] ERROR: Widget has no publishTopic configured');
+        debugPrint('[CONTROL] ERROR: Widget has no publishTopic configured');
       }
     } catch (e) {
-      print('[CONTROL] ERROR: Exception occurred: $e');
+      debugPrint('[CONTROL] ERROR: Exception occurred: $e');
     }
   }
 
@@ -387,7 +387,7 @@ class RuleEvaluatorService {
         notificationDetails,
       );
 
-      print('[NOTIFICATION] Sent: $title');
+      debugPrint('[NOTIFICATION] Sent: $title');
       ref
           .read(ruleActivityProvider.notifier)
           .addLog(
@@ -395,7 +395,7 @@ class RuleEvaluatorService {
             actionDescription: 'Notification sent: "$title"',
           );
     } catch (e) {
-      print('[NOTIFICATION] Show failed: $e');
+      debugPrint('[NOTIFICATION] Show failed: $e');
       ref
           .read(ruleActivityProvider.notifier)
           .addLog(
@@ -415,7 +415,7 @@ class RuleEvaluatorService {
         : '';
     final message = 'Triggered$contextInfo';
 
-    print('[RULE LOG] ${DateTime.now()}: ${rule.name} $message');
+    debugPrint('[RULE LOG] ${DateTime.now()}: ${rule.name} $message');
 
     // Log to activity provider
     ref

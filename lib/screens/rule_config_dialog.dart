@@ -83,10 +83,12 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
         _scheduleType = config.type;
         if (config.dailyTime != null) _selectedTime = config.dailyTime!;
         if (config.weeklyTime != null) _selectedTime = config.weeklyTime!;
-        if (config.weekdays != null)
+        if (config.weekdays != null) {
           _selectedWeekdays = config.weekdays!.toSet();
-        if (config.intervalMinutes != null)
+        }
+        if (config.intervalMinutes != null) {
           _intervalMinutes = config.intervalMinutes!;
+        }
         if (config.executeAt != null) _onceDateTime = config.executeAt;
       }
 
@@ -236,7 +238,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
               if (_enableControlWidget) ...[
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _targetWidgetId,
+                  initialValue: _targetWidgetId,
                   decoration: const InputDecoration(
                     labelText: 'Target Widget',
                     border: OutlineInputBorder(),
@@ -370,7 +372,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedWidgetId,
+          initialValue: _selectedWidgetId,
           decoration: const InputDecoration(
             labelText: 'Source Widget',
             border: OutlineInputBorder(),
@@ -388,7 +390,7 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
           children: [
             Expanded(
               child: DropdownButtonFormField<RuleOperator>(
-                value: _selectedOperator,
+                initialValue: _selectedOperator,
                 decoration: const InputDecoration(
                   labelText: 'Operator',
                   border: OutlineInputBorder(),
@@ -480,14 +482,14 @@ class _RuleConfigDialogState extends ConsumerState<RuleConfigDialog> {
                 firstDate: DateTime.now(),
                 lastDate: DateTime.now().add(const Duration(days: 365)),
               );
-              if (date != null) {
+              if (date != null && mounted) {
                 final time = await showTimePicker(
                   context: context,
                   initialTime: TimeOfDay.fromDateTime(
                     _onceDateTime ?? DateTime.now(),
                   ),
                 );
-                if (time != null) {
+                if (time != null && mounted) {
                   setState(() {
                     _onceDateTime = DateTime(
                       date.year,

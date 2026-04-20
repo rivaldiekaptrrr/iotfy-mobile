@@ -91,11 +91,11 @@ class _StatusPanelState extends ConsumerState<StatusPanel>
     IconData stateIcon;
 
     if (!isConnected) {
-      stateColor = Colors.grey.withOpacity(0.5);
+      stateColor = Colors.grey.withValues(alpha: 0.5);
       stateText = 'Offline';
       stateIcon = Icons.wifi_off;
     } else if (_lastPayload == null) {
-      stateColor = Colors.grey.withOpacity(0.3);
+      stateColor = Colors.grey.withValues(alpha: 0.3);
       stateText = 'Waiting...';
       stateIcon = Icons.hourglass_empty;
     } else if (isActive) {
@@ -146,12 +146,12 @@ class _StatusPanelState extends ConsumerState<StatusPanel>
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: stateColor.withOpacity(0.2),
+                    color: stateColor.withValues(alpha: 0.2),
                     border: Border.all(color: stateColor, width: 4),
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              color: stateColor.withOpacity(0.6),
+                              color: stateColor.withValues(alpha: 0.6),
                               blurRadius:
                                   _glowAnimation.value, // Breathing glow
                               spreadRadius: _glowAnimation.value / 4,

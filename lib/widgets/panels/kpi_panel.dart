@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class KPIPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -137,7 +136,7 @@ class _KPIPanelState extends ConsumerState<KPIPanel>
                           dotData: FlDotData(show: false),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: color.withOpacity(0.5),
+                            color: color.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -167,7 +166,7 @@ class _KPIPanelState extends ConsumerState<KPIPanel>
                       ),
                     ),
                     if (widget.config.icon != null)
-                      Icon(widget.config.icon, color: color.withOpacity(0.7)),
+                      Icon(widget.config.icon, color: color.withValues(alpha: 0.7)),
                   ],
                 ),
                 const Spacer(),
@@ -179,8 +178,8 @@ class _KPIPanelState extends ConsumerState<KPIPanel>
                           ? _buildShimmer(
                               width: 80,
                               height: 32,
-                              baseColor: theme.disabledColor.withOpacity(0.3),
-                              highlightColor: theme.disabledColor.withOpacity(
+                              baseColor: theme.disabledColor.withValues(alpha: 0.3),
+                              highlightColor: theme.disabledColor.withValues(alpha: 
                                 0.1,
                               ),
                             )

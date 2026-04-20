@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class BatteryPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -71,8 +70,11 @@ class _BatteryPanelState extends ConsumerState<BatteryPanel> {
     
     // Choose color
     Color batColor = Colors.green;
-    if (percent <= 0.2) batColor = Colors.red;
-    else if (percent <= 0.5) batColor = Colors.orange;
+    if (percent <= 0.2) {
+      batColor = Colors.red;
+    } else if (percent <= 0.5) {
+      batColor = Colors.orange;
+    }
     
     // Override if user selected generic color and it's not default blue
     if (widget.config.colorValue != null) {

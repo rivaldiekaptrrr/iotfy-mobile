@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import '../models/broker_config.dart';
@@ -115,8 +114,7 @@ class MqttService {
       final connMessage = MqttConnectMessage()
           .withClientIdentifier(clientId)
           .startClean() // Clean session
-          .withWillQos(MqttQos.atMostOnce)
-          .keepAliveFor(config.keepAlivePeriod);
+          .withWillQos(MqttQos.atMostOnce);
 
       if (username != null && username.isNotEmpty) {
         connMessage.authenticateAs(username, password ?? '');

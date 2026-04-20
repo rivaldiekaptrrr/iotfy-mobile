@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/panel_widget_config.dart';
 import '../utils/widget_category_helper.dart';
-import '../utils/icon_helper.dart';
 
 class WidgetCatalogScreen extends StatelessWidget {
   const WidgetCatalogScreen({super.key});
@@ -88,7 +87,7 @@ class WidgetCatalogScreen extends StatelessWidget {
                     size: 16,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onPrimaryContainer.withOpacity(0.5),
+                    ).colorScheme.onPrimaryContainer.withValues(alpha: 0.5),
                   ),
                 ],
               ),
@@ -116,11 +115,11 @@ class WidgetCatalogScreen extends StatelessWidget {
                             border: Border.all(
                               color: Theme.of(
                                 context,
-                              ).dividerColor.withOpacity(0.5),
+                              ).dividerColor.withValues(alpha: 0.5),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -130,7 +129,7 @@ class WidgetCatalogScreen extends StatelessWidget {
                             icon,
                             color: Theme.of(
                               context,
-                            ).colorScheme.primary.withOpacity(0.7),
+                            ).colorScheme.primary.withValues(alpha: 0.7),
                             size: 20,
                           ),
                         ),

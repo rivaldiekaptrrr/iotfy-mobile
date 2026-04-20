@@ -4,7 +4,6 @@ import 'package:syncfusion_flutter_gauges/gauges.dart';
 import '../../models/panel_widget_config.dart';
 import '../../models/mqtt_message.dart' as app_mqtt;
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class RadialGaugePanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -89,7 +88,7 @@ class _RadialGaugePanelState extends ConsumerState<RadialGaugePanel> {
                     axisLineStyle: AxisLineStyle(
                       thickness: 0.2,
                       thicknessUnit: GaugeSizeUnit.factor,
-                      color: scheme.surfaceContainerHighest.withOpacity(0.3),
+                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       cornerStyle: CornerStyle.bothCurve,
                     ),
                     pointers: <GaugePointer>[

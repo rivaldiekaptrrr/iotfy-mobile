@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class KeypadPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -103,10 +102,10 @@ class _KeypadPanelState extends ConsumerState<KeypadPanel> {
                     Color fgColor = theme.colorScheme.onSurface;
                     
                     if (key == 'OK') {
-                      bgColor = Colors.green.withOpacity(0.2);
+                      bgColor = Colors.green.withValues(alpha: 0.2);
                       fgColor = Colors.green;
                     } else if (key == 'C') {
-                      bgColor = Colors.red.withOpacity(0.2);
+                      bgColor = Colors.red.withValues(alpha: 0.2);
                       fgColor = Colors.red;
                     }
 

@@ -44,7 +44,6 @@ class AlarmDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     AlarmEvent alarm,
   ) {
-    final scheme = Theme.of(context).colorScheme;
     final severityColor = _getSeverityColor(alarm.severity);
 
     return Hero(
@@ -95,7 +94,7 @@ class AlarmDetailScreen extends ConsumerWidget {
                         'ACKNOWLEDGED',
                         style: TextStyle(fontSize: 10),
                       ),
-                      backgroundColor: Colors.blue.withOpacity(0.1),
+                      backgroundColor: Colors.blue.withValues(alpha: 0.1),
                       labelStyle: const TextStyle(color: Colors.blue),
                     )
                   else
@@ -104,7 +103,7 @@ class AlarmDetailScreen extends ConsumerWidget {
                         'CLEARED',
                         style: TextStyle(fontSize: 10),
                       ),
-                      backgroundColor: Colors.green.withOpacity(0.1),
+                      backgroundColor: Colors.green.withValues(alpha: 0.1),
                       labelStyle: const TextStyle(color: Colors.green),
                     ),
                 ],
@@ -125,7 +124,7 @@ class AlarmDetailScreen extends ConsumerWidget {
               _buildInfoRow('Condition', alarm.condition),
               _buildInfoRow(
                 'Trigger Value',
-                '${alarm.triggerValue.toStringAsFixed(1)}',
+                alarm.triggerValue.toStringAsFixed(1),
               ),
             ],
           ),

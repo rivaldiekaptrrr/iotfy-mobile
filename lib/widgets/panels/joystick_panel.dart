@@ -1,9 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class JoystickPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -20,7 +18,6 @@ class _JoystickPanelState extends ConsumerState<JoystickPanel> {
   
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
-      final localPos = details.localPosition;
       // Center is (width/2, height/2) which we'll handle in layout via FractionalTranslation or similar.
       // But standard way: keep stick pos relative to center (0,0)
       
@@ -92,7 +89,7 @@ class _JoystickPanelState extends ConsumerState<JoystickPanel> {
                 height: _radius * 2.5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   border: Border.all(color: Theme.of(context).dividerColor),
                 ),
                 child: GestureDetector(
@@ -115,14 +112,14 @@ class _JoystickPanelState extends ConsumerState<JoystickPanel> {
                             color: widget.config.color,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 5),
                               )
                             ],
                             gradient: RadialGradient(
                               colors: [
-                                widget.config.color.withOpacity(0.8),
+                                widget.config.color.withValues(alpha: 0.8),
                                 widget.config.color,
                               ],
                               center: const Alignment(-0.2, -0.2),

@@ -91,7 +91,7 @@ class AlarmPanel extends ConsumerWidget {
                         Icon(
                           Icons.check_circle_outline,
                           size: 48,
-                          color: Colors.green.withOpacity(0.5),
+                          color: Colors.green.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -106,7 +106,7 @@ class AlarmPanel extends ConsumerWidget {
                           Text(
                             'Tap "History" to view past alarms',
                             style: TextStyle(
-                              color: scheme.onSurfaceVariant.withOpacity(0.7),
+                              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
                               fontSize: 10,
                             ),
                           ),
@@ -197,13 +197,13 @@ class _AlarmEventCardState extends State<AlarmEventCard>
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: alarm.status == AlarmStatus.acknowledged
-                    ? scheme.surfaceContainerHighest.withOpacity(0.5)
+                    ? scheme.surfaceContainerHighest.withValues(alpha: 0.5)
                     : scheme.surface,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: alarm.status == AlarmStatus.acknowledged
-                      ? scheme.outline.withOpacity(0.3)
-                      : severityColor.withOpacity(
+                      ? scheme.outline.withValues(alpha: 0.3)
+                      : severityColor.withValues(alpha: 
                           0.5 * pulseOpacity,
                         ), // Pulse the border alpha
                   width: 1.5,
@@ -211,7 +211,7 @@ class _AlarmEventCardState extends State<AlarmEventCard>
                 boxShadow: _controller.isAnimating
                     ? [
                         BoxShadow(
-                          color: severityColor.withOpacity(0.2 * pulseOpacity),
+                          color: severityColor.withValues(alpha: 0.2 * pulseOpacity),
                           blurRadius: 8 * pulseOpacity,
                         ),
                       ]
@@ -266,7 +266,7 @@ class _AlarmEventCardState extends State<AlarmEventCard>
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: const Text(

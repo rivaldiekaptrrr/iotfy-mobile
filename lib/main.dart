@@ -59,7 +59,7 @@ Future<void> _requestNotificationPermission() async {
   if (androidImplementation != null) {
     final bool? granted = await androidImplementation
         .requestNotificationsPermission();
-    print('[PERMISSION] Notification permission: ${granted ?? false}');
+    debugPrint('[PERMISSION] Notification permission: ${granted ?? false}');
   }
 }
 

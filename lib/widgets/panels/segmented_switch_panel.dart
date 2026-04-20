@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/panel_widget_config.dart';
 import '../../providers/mqtt_providers.dart';
-import '../../services/mqtt_service.dart';
 
 class SegmentedSwitchPanel extends ConsumerStatefulWidget {
   final PanelWidgetConfig config;
@@ -95,7 +94,7 @@ class _SegmentedSwitchPanelState extends ConsumerState<SegmentedSwitchPanel> {
                                 color: isSelected ? theme.cardColor : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: isSelected 
-                                  ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)] 
+                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)] 
                                   : null,
                               ),
                               child: Text(
